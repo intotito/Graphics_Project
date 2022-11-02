@@ -13,18 +13,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.5/dat.gui.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.2/TweenMax.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
-<!--    <script src="OrbitControls.js"></script> -->
+    <!--    <script src="OrbitControls.js"></script> -->
 
     <script type="text/javascript">
 
-        class Cannon{
+        class Cannon {
             velocity = 0.1;
             acc = 0.01;
 
-            constructor(x, y, z, pitch, yaw){
+            constructor(x, y, z, pitch, yaw) {
                 this.pitch = pitch;
                 this.yaw = yaw;
-                let material = new THREE.MeshPhonMaterial({ color: 0xFF0000});
+                let material = new THREE.MeshPhonMaterial({ color: 0xFF0000 });
                 this.sphere = new THREE.Mesh(geometry, material);
                 this.sphere.position.x = x;
                 this.sphere.position.y = y;
@@ -32,17 +32,17 @@
                 this.sphere.castShadow = true;
             }
 
-            getX(){
+            getX() {
                 return this.sphere.positioin.x;
             }
-            getY(){
+            getY() {
                 return this.sphere.positioin.x;
             }
-            getZ(){
+            getZ() {
                 return this.sphere.positioin.x;
             }
 
-            move(){
+            move() {
 
             }
 
@@ -51,20 +51,20 @@
 
         class Ship {
             LEFT = 37;
-			RIGHT = 39;
-			DOWN = 40;
-			UP = 38;
-            cameraOffset = 1;
+            RIGHT = 39;
+            DOWN = 40;
+            UP = 38;
+            cameraOffset = 2;
             MAX_VELOCITY = 0.1;
             velocity = {
-                x:0,
-                y:0,
-                z:0
+                x: 0,
+                y: 0,
+                z: 0
             };
             acc = {
-                x:0,
-                y:0,
-                z:0.001
+                x: 0,
+                y: 0,
+                z: 0.001
             }
             constructor() {
                 this.sprite = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.05, 0.375), new THREE.MeshPhongMaterial({ color: 0x00ff00 }));
@@ -72,23 +72,23 @@
                 this.sprite.castShadow = true;
             }
 
-            getX(){
+            getX() {
                 return this.sprite.position.x;
             }
-            getY(){
+            getY() {
                 return this.sprite.position.y;
             }
-            getZ(){
+            getZ() {
                 return this.sprite.position.z;
             }
 
-            setX(x){
+            setX(x) {
                 return this.sprite.position.x = x;
             }
-            setY(y){
+            setY(y) {
                 return this.sprite.position.y = y;
             }
-            setZ(z){
+            setZ(z) {
                 return this.sprite.position.z = z;
             }
 
@@ -102,22 +102,22 @@
                 this.sprite.rotation.x += angle;
             }
 
-            handleKeyEvent(code){
+            handleKeyEvent(code) {
                 console.log("Key pressed working!!");
                 if (code == this.RIGHT) {
-					this.sprite.rotation.y += toRad(-0.5);
+                    this.sprite.rotation.y += toRad(-1);
                     this.sprite.rotation.z += toRad(-5);
-				} else if (code == this.LEFT) {
-					this.sprite.rotation.y += toRad(0.5);
+                } else if (code == this.LEFT) {
+                    this.sprite.rotation.y += toRad(1);
                     this.sprite.rotation.z += toRad(5);
-				} else if (code == this.UP) {
+                } else if (code == this.UP) {
                     this.sprite.rotation.x += toRad(1);
-					
-				} else if (code == this.DOWN) {
-					this.sprite.rotation.x += toRad(-1);
-				} 
-            }
 
+                } else if (code == this.DOWN) {
+                    this.sprite.rotation.x += toRad(-1);
+                }
+            }
+            count = 0;
             move(camera, light) {
                 let uz = this.velocity.z;
                 let vz = uz + this.acc.z;
@@ -131,7 +131,7 @@
                 let dy = Math.sin(this.sprite.rotation.x) * vz;
 
                 this.velocity.z = Math.min(this.MAX_VELOCITY, -dz);
-               
+
 
                 let px = this.getX();
                 let pz = this.getZ();
@@ -139,42 +139,45 @@
                 this.setY(this.getY() + dy);
                 this.setX(this.getX() * cosB + this.getZ() * -sinB + (px + dx) - px * cosB + pz * sinB);
                 this.setZ(this.getX() * sinB + this.getZ() * cosB + (pz + dz) - pz * cosB - px * sinB);
-                console.log("Velocity = " + toDeg(this.sprite.rotation.y));
-                
+
                 let delta = clock.getDelta();
-                if(this.sprite.rotation.z !== 0){
+                if (this.sprite.rotation.z !== 0) {
                     let diff = this.sprite.rotation.z;
-                    
+
                     this.sprite.rotation.z -= (diff * delta * 100);
                 }
-        
-                if(this.sprite.rotation.x !== 0){
+
+                if (this.sprite.rotation.x !== 0) {
                     let diff = this.sprite.rotation.x;
-                    
+
                     this.sprite.rotation.x -= (diff * delta * 50);
                 }
 
-                camera.position.z = this.getZ() + this.cameraOffset * 4;
+                let camDiff = (camera.position.z - this.getZ() - this.cameraOffset);
+
+                let translate = camDiff * delta + this.velocity.z * cosB + this.velocity.z * sinB;
+                    camera.position.z -= (translate);//this.getZ() + this.cameraOffset;
+              
                 light.position.z = camera.position.z + 2;
                 camera.position.y = this.getY() + this.cameraOffset * 0;
-          //      light.lookAt(0,0,this.getZ() - 10);
+                //      light.lookAt(0,0,this.getZ() - 10);
 
-     //           camera.position.copy(pos);
-           //     camera.lookAt(look);
-               // look.applyQuaternion(this.ship.target.Rotation);
-                
+                //           camera.position.copy(pos);
+                //     camera.lookAt(look);
+                // look.applyQuaternion(this.ship.target.Rotation);
+
 
             }
-            getMesh(){
+            getMesh() {
                 return this.sprite;
             }
         }
 
         $(document.body).on('keydown', function (e) {
-			
-			ship.handleKeyEvent(e.which);
 
-		});
+            ship.handleKeyEvent(e.which);
+
+        });
 
         function initTHREEJS() {
             let scene = new THREE.Scene();
@@ -188,8 +191,8 @@
             camera.position.z = 1;
             camera.position.y = 1.5;
             camera.position.x = 0.0;
-        
-       //     camera.position.x = 0;
+
+            //     camera.position.x = 0;
 
             let light = new THREE.SpotLight(
                 0xFFFFFF// color
@@ -200,7 +203,7 @@
             light.shadow.mapSize.height = 2024;
             light.castShadow = true;
             light.position.set(0, 5, 5);
-        //    light.lookAt(0, 0, 0);
+            //    light.lookAt(0, 0, 0);
 
             let renderer = new THREE.WebGLRenderer(
                 { antialias: true }
@@ -283,18 +286,18 @@
 
         const ship = new Ship();
 
-     //    ship.yaw(toRad(5));
+        //    ship.yaw(toRad(5));
         light.target = ship.getMesh();
         const helper = new THREE.CameraHelper(light.shadow.camera);
 
         scene.add(camera);
-             scene.add(cylinder);
+        scene.add(cylinder);
         scene.add(plane);
 
         scene.add(light);
         scene.add(helper);
-        scene.add( ship.getMesh() );
-     //   const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        scene.add(ship.getMesh());
+        //   const controls = new THREE.OrbitControls(camera, renderer.domElement);
         var number = 45;
 
         const clock = new THREE.Clock();
@@ -319,14 +322,14 @@
 
 
             //     camera.position.y = ball.getY() + .2;// + 0.2;// + 1;
-           //      camera.lookAt(0, 0, -100);
+            //      camera.lookAt(0, 0, -100);
 
 
-            clock.getDelta();
-            time = clock.elapsedTime;
+            //        clock.getDelta();
+            //        time = clock.elapsedTime;
             ship.move(camera, light)
 
-          //  controls.update();
+            //  controls.update();
 
 
             renderer.render(scene, camera);
