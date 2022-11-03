@@ -18,43 +18,99 @@
     <script type="text/javascript">
 
         class Cannon {
-            velocity = 0.1;
-            acc = 0.01;
+            RELEASE_VELOCITY = 1;
+            velocity = {
+                x: 0,
+                y: 0,
+                z: 0,
+            }
+            acc = {
+                x: 0,
+                y: 0.005,
+                z: 0
+            }
 
-            constructor(x, y, z, pitch, yaw) {
+            constructor(x, y, z, pitch, yaw, scene) {
+                console.log("x: " +x +" y: " + y + " z: " + z + " yaw: " + yaw + " pitch: " + pitch);
+                this.scene = scene;
                 this.pitch = pitch;
                 this.yaw = yaw;
-                let material = new THREE.MeshPhonMaterial({ color: 0xFF0000 });
+                let geometry = new THREE.SphereGeometry(
+                    0.05,//  radius
+                    10,// widthSegments
+                    10// heightSegments
+                );
+                let material = new THREE.MeshPhongMaterial({ color: 0xFF0000 });
                 this.sphere = new THREE.Mesh(geometry, material);
                 this.sphere.position.x = x;
                 this.sphere.position.y = y;
                 this.sphere.position.z = z;
                 this.sphere.castShadow = true;
+                this.velocity.z = this.RELEASE_VELOCITY * Math.cos(pitch) * Math.cos(yaw);
+                this.velocity.x = this.RELEASE_VELOCITY * Math.sin(yaw);
+                this.velocity.y = this.RELEASE_VELOCITY * Math.sin(-pitch);
+                
+                console.log("ZZ + " + this.getZ())
             }
 
+            setX(x) {
+                this.sphere.position.x = x;
+            }
+
+            setY(y) {
+                this.sphere.position.y = y;
+            }
+            setZ(z) {
+                this.sphere.position.z = z;
+            }
             getX() {
-                return this.sphere.positioin.x;
+                return this.sphere.position.x;
             }
             getY() {
-                return this.sphere.positioin.x;
+                return this.sphere.position.y;
             }
             getZ() {
-                return this.sphere.positioin.x;
+                return this.sphere.position.z;
+            }
+
+            getMesh(){
+                return this.sphere;
             }
 
             move() {
+                console.log("We are moving (x,y,z) ("  + this.getX() + ", " + this.getY() +", " + this.getZ()+")");
+                let xU = this.velocity.x; // Initial velocity along x-axis
+                let yU = this.velocity.y; // Initial velocity along y-axis
+                let zU = this.velocity.z;// Initial velocity along z-axis
+                this.velocity.x = xU + this.acc.x // Final velocity along x-axis vx = ux + at 
+                this.velocity.y = yU + Math.abs(this.acc.y); // Final velocity along y-axis vy = uy + g * t
+                this.velocity.z = zU + this.acc.z; // Final velocity along z-axis vz = uz + g * t
 
+
+                this.setX(this.getX() - xU + this.acc.x / 2); // Distance travelled per frame s = ux * t + ½a * t²
+                this.setY(this.getY() - yU + this.acc.y / 2); // Distance travelled per frame s = uy * t + ½g * t²
+                this.setZ(this.getZ() - zU - this.acc.z / 2); // Distance travelled per frame s = uy * t + ½g * t²
+            }
+
+            fire() {
+                this.scene.add(this.sphere);
             }
 
 
         }
 
         class Ship {
+            weapons = [];
             LEFT = 37;
             RIGHT = 39;
             DOWN = 40;
             UP = 38;
-            cameraOffset = 2;
+            FIRE_CANNON = 70;
+            cameraOffset = {
+                x: 0,
+                y: 1,
+                z: 3
+            };
             MAX_VELOCITY = 0.1;
             velocity = {
                 x: 0,
@@ -102,7 +158,8 @@
                 this.sprite.rotation.x += angle;
             }
 
-            handleKeyEvent(code) {
+
+            handleKeyEvent(code, scene) {
                 console.log("Key pressed working!!");
                 if (code == this.RIGHT) {
                     this.sprite.rotation.y += toRad(-1);
@@ -110,15 +167,25 @@
                 } else if (code == this.LEFT) {
                     this.sprite.rotation.y += toRad(1);
                     this.sprite.rotation.z += toRad(5);
-                } else if (code == this.UP) {
+                } else if (code == this.DOWN) {
                     this.sprite.rotation.x += toRad(1);
 
-                } else if (code == this.DOWN) {
+                } else if (code == this.UP) {
                     this.sprite.rotation.x += toRad(-1);
+                } else if (code == this.FIRE_CANNON) {
+                    let cannon = new Cannon(this.getX(), this.getY(), this.getZ(), this.sprite.rotation.x, this.sprite.rotation.z, scene);
+                    this.weapons.push(cannon);
+                    cannon.fire();
+              //      scene.add(cannon.getMesh());
                 }
             }
             count = 0;
             move(camera, light) {
+
+                this.weapons.forEach((weap) => {
+                    weap.move();
+                });
+
                 let uz = this.velocity.z;
                 let vz = uz + this.acc.z;
 
@@ -144,22 +211,38 @@
                 if (this.sprite.rotation.z !== 0) {
                     let diff = this.sprite.rotation.z;
 
-                    this.sprite.rotation.z -= (diff * delta * 100);
+                    this.sprite.rotation.z -= (diff * delta);
                 }
 
                 if (this.sprite.rotation.x !== 0) {
                     let diff = this.sprite.rotation.x;
 
-                    this.sprite.rotation.x -= (diff * delta * 50);
+                    this.sprite.rotation.x -= (diff * delta);
                 }
 
-                let camDiff = (camera.position.z - this.getZ() - this.cameraOffset);
+                let camDiff = (camera.position.z - this.getZ() - this.cameraOffset.z);
 
-                let translate = camDiff * delta + this.velocity.z * cosB + this.velocity.z * sinB;
-                    camera.position.z -= (translate);//this.getZ() + this.cameraOffset;
-              
+                let translate = camDiff * delta;// + this.velocity.z * cosB + this.velocity.z * sinB;
+                //     camera.position.z -= (translate);//this.getZ() + this.cameraOffset;
+
+
+                let fx = -(camera.position.x - this.getX() - this.cameraOffset.x) * delta;
+                let fz = -(camera.position.z - this.getZ() - this.cameraOffset.z) * delta;
+                let xx = camera.position.x;
+                let zz = camera.position.z;
+
+                let ddx = (camera.position.x - this.getX());
+                let ddz = (camera.position.z - this.getZ());
+                //   sinB = Math.sin(Math.atan2(ddz, ddx));
+                //    cosB = Math.cos(Math.atan2(ddz, ddx));          
+                let xfx = xx * cosB + zz * -sinB + (ddx + fx) - (ddx) * cosB + (ddz) * sinB;
+                let zfz = xx * sinB + zz * cosB + (ddz + fz) - (ddz) * cosB - (ddx) * sinB;
+
+                camera.position.z -= (camera.position.z - this.getZ() - this.cameraOffset.z) * delta + this.velocity.z * cosB;
+                camera.position.y -= (camera.position.y - this.getY() - this.cameraOffset.y) * delta;
+                camera.position.x -= (camera.position.x - this.getX() - this.cameraOffset.x) * delta;
+
                 light.position.z = camera.position.z + 2;
-                camera.position.y = this.getY() + this.cameraOffset * 0;
                 //      light.lookAt(0,0,this.getZ() - 10);
 
                 //           camera.position.copy(pos);
@@ -173,11 +256,7 @@
             }
         }
 
-        $(document.body).on('keydown', function (e) {
 
-            ship.handleKeyEvent(e.which);
-
-        });
 
         function initTHREEJS() {
             let scene = new THREE.Scene();
@@ -247,6 +326,11 @@
                 this.t1.to(this.mesh.rotation, 0.5, { z: Math.PI * 0.5, ease: Expo.easeOut });
             }
         }
+        $(document.body).on('keydown', function (e) {
+
+            ship.handleKeyEvent(e.which, scene);
+
+        });
 
         const PLAIN_DIMEN = {
             x: 5,
@@ -264,7 +348,7 @@
 
         const plane = new THREE.Mesh(
             new THREE.PlaneGeometry(PLAIN_DIMEN.x, PLAIN_DIMEN.z),
-            new THREE.MeshPhongMaterial({ color: 0xFF0000, side: THREE.DoubleSide })
+            new THREE.MeshPhongMaterial({ color: 0x1F1FFF, side: THREE.DoubleSide })
         );
         plane.position.z -= PLAIN_DIMEN.z / 2;
         plane.castShadow = false;
