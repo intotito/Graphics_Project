@@ -17,6 +17,49 @@
 
     <script type="text/javascript">
 
+        class SAMLauncher {
+            dim = {
+                x: 1.5/2,
+                y: 1/2,
+                z: 1
+            }
+            constructor(x, y) {
+                this.SAM = new THREE.Group();
+                let shape = new THREE.Shape();
+                shape.moveTo(0, 0);
+                shape.lineTo(0, this.dim.y);
+
+                
+
+
+
+                shape.lineTo(this.dim.x * 0.55, this.dim.y);
+                shape.lineTo(this.dim.x, this.dim.y * 0.7);
+                shape.lineTo(this.dim.x, this.dim.y * 0.1);
+                shape.lineTo(this.dim.x * 0.9, 0);
+                shape.lineTo(this.dim.x * 0.8, 0);
+                shape.arc(- this.dim.x * 0.5 / 2, 0, this.dim.x * 0.5 / 2, 0, Math.PI, false);
+                shape.lineTo(0, 0);
+                let extrudeSettings = {
+                    steps: 2,
+                    depth: this.dim.z,
+                    bevelEnabled: true,
+                    bevelThickness: 1,
+                    bevelSize: 0,
+                    bevelSegment: 2
+                };
+                
+                this.mesh = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, extrudeSettings),
+                new THREE.MeshPhongMaterial({ color: 0x00ff00 }));
+                this.mesh.position.y = this.dim.y / 2;
+                this.mesh.position.z = -4;
+            }
+
+            getMesh(){
+                return this.mesh;
+            }
+        }
+
         class Cannon {
             RELEASE_VELOCITY = 1;
             velocity = {
@@ -31,7 +74,7 @@
             }
 
             constructor(x, y, z, pitch, yaw, scene) {
-                console.log("x: " +x +" y: " + y + " z: " + z + " yaw: " + yaw + " pitch: " + pitch);
+                console.log("x: " + x + " y: " + y + " z: " + z + " yaw: " + yaw + " pitch: " + pitch);
                 this.scene = scene;
                 this.pitch = pitch;
                 this.yaw = yaw;
@@ -49,7 +92,7 @@
                 this.velocity.z = this.RELEASE_VELOCITY * Math.cos(pitch) * Math.cos(yaw);
                 this.velocity.x = this.RELEASE_VELOCITY * Math.sin(yaw);
                 this.velocity.y = this.RELEASE_VELOCITY * Math.sin(-pitch);
-                
+
                 console.log("ZZ + " + this.getZ())
             }
 
@@ -73,12 +116,12 @@
                 return this.sphere.position.z;
             }
 
-            getMesh(){
+            getMesh() {
                 return this.sphere;
             }
 
             move() {
-                console.log("We are moving (x,y,z) ("  + this.getX() + ", " + this.getY() +", " + this.getZ()+")");
+                console.log("We are moving (x,y,z) (" + this.getX() + ", " + this.getY() + ", " + this.getZ() + ")");
                 let xU = this.velocity.x; // Initial velocity along x-axis
                 let yU = this.velocity.y; // Initial velocity along y-axis
                 let zU = this.velocity.z;// Initial velocity along z-axis
@@ -176,7 +219,7 @@
                     let cannon = new Cannon(this.getX(), this.getY(), this.getZ(), this.sprite.rotation.x, this.sprite.rotation.z, scene);
                     this.weapons.push(cannon);
                     cannon.fire();
-              //      scene.add(cannon.getMesh());
+                    //      scene.add(cannon.getMesh());
                 }
             }
             count = 0;
@@ -348,7 +391,7 @@
 
         const plane = new THREE.Mesh(
             new THREE.PlaneGeometry(PLAIN_DIMEN.x, PLAIN_DIMEN.z),
-            new THREE.MeshPhongMaterial({ color: 0x1F1FFF, side: THREE.DoubleSide })
+            new THREE.MeshPhongMaterial({ color: 0x1F1FFF0, side: THREE.DoubleSide })
         );
         plane.position.z -= PLAIN_DIMEN.z / 2;
         plane.castShadow = false;
@@ -369,6 +412,7 @@
 
 
         const ship = new Ship();
+        const sam = new SAMLauncher(0, 0);
 
         //    ship.yaw(toRad(5));
         light.target = ship.getMesh();
@@ -381,6 +425,7 @@
         scene.add(light);
         scene.add(helper);
         scene.add(ship.getMesh());
+        scene.add(sam.getMesh());
         //   const controls = new THREE.OrbitControls(camera, renderer.domElement);
         var number = 45;
 
@@ -411,10 +456,10 @@
 
             //        clock.getDelta();
             //        time = clock.elapsedTime;
-            ship.move(camera, light)
+       //     ship.move(camera, light)
 
             //  controls.update();
-
+sam.getMesh().rotation.y += toRad(0.5);
 
             renderer.render(scene, camera);
 
