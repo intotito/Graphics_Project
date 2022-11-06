@@ -19,44 +19,186 @@
 
         class SAMLauncher {
             dim = {
-                x: 1.5/2,
-                y: 1/2,
-                z: 1
+                x: 1,
+                y: 0.32,
+                z: 0.5
             }
+            trans = {
+                x: -this.dim.x,
+                y: 0,//this.dim.y / 2,
+                z: 0
+            };
+            scale = {
+                x: 2,
+                y: 2,
+                z: 2
+            };
             constructor(x, y) {
+                this.dim.x *= this.scale.x;
+                this.dim.y *= this.scale.y;
+                this.dim.z *= this.scale.z;
                 this.SAM = new THREE.Group();
                 let shape = new THREE.Shape();
-                shape.moveTo(0, 0);
-                shape.lineTo(0, this.dim.y);
-
-                
-
-
-
-                shape.lineTo(this.dim.x * 0.55, this.dim.y);
-                shape.lineTo(this.dim.x, this.dim.y * 0.7);
-                shape.lineTo(this.dim.x, this.dim.y * 0.1);
-                shape.lineTo(this.dim.x * 0.9, 0);
-                shape.lineTo(this.dim.x * 0.8, 0);
-                shape.arc(- this.dim.x * 0.5 / 2, 0, this.dim.x * 0.5 / 2, 0, Math.PI, false);
-                shape.lineTo(0, 0);
+                shape.moveTo(0 + this.trans.x, 0 + this.trans.y);
+                shape.lineTo(0 + this.trans.x, this.dim.y / 2 + this.trans.y);
+                shape.lineTo(0.6 * this.dim.x + this.trans.x, this.dim.y / 2 + this.trans.y);
+                shape.lineTo(0.6 * this.dim.x + this.trans.x, this.dim.y + this.trans.y);
+                shape.lineTo(0.85 * this.dim.x + this.trans.x, this.dim.y + this.trans.y);
+                shape.lineTo(this.dim.x + this.trans.x, this.dim.y * 0.75 + this.trans.y);
+                shape.lineTo(this.dim.x + this.trans.x, this.dim.y * 0.15 + this.trans.y);
+                shape.lineTo(this.dim.x * 0.95 + this.trans.x, 0 + this.trans.y);
+                shape.lineTo(this.dim.x * 0.9 + this.trans.x, 0 + this.trans.y);
+                shape.arc(-this.dim.x * 0.15 / 2, 0, this.dim.x * 0.15 / 2, 0, Math.PI, false);
+                shape.lineTo(this.dim.x * 0.2 + this.trans.x, 0 + this.trans.y);
+                shape.arc(-this.dim.x * 0.15 / 2, 0, this.dim.x * 0.15 / 2, 0, Math.PI, false);
+                shape.lineTo(0 + this.trans.x, 0 + this.trans.y);
                 let extrudeSettings = {
-                    steps: 2,
+                    steps: 1,
                     depth: this.dim.z,
                     bevelEnabled: true,
-                    bevelThickness: 1,
+                    bevelThickness: 0,
                     bevelSize: 0,
                     bevelSegment: 2
                 };
-                
-                this.mesh = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, extrudeSettings),
-                new THREE.MeshPhongMaterial({ color: 0x00ff00 }));
-                this.mesh.position.y = this.dim.y / 2;
-                this.mesh.position.z = -4;
+                let geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings)
+                console.log(-this.dim.z / 2);
+                geometry.translate(0, 0, this.dim.z / -2);
+                this.mesh = new THREE.Mesh(geometry,
+                    new THREE.MeshPhongMaterial({ color: 0x00ff00 }));
+
+
+
+                let shape1 = new THREE.Shape();
+                shape1.moveTo(this.dim.x * 0.2 + this.trans.x, 0 + this.trans.y);
+                shape1.arc(-this.dim.x * 0.15 / 2, 0, this.dim.x * 0.15 / 2, 0, Math.PI, false);
+
+                let extrudeSettings1 = {
+                    steps: 2,
+                    depth: this.dim.z * 1.1,
+                    bevelEnabled: true,
+                    bevelThickness: 0,
+                    bevelSegment: 2,
+                    bevelSize: 0
+                };
+
+                this.mesh1 = new THREE.Mesh(new THREE.ExtrudeGeometry(shape1, extrudeSettings1),
+                    new THREE.MeshPhongMaterial({ color: 0x2F2F2F }));
+                this.mesh1.geometry.translate(0, 0, -this.dim.z * 1.1 / 2);
+
+                this.mesh2 = new THREE.Mesh(new THREE.ExtrudeGeometry(shape1, extrudeSettings1),
+                    new THREE.MeshPhongMaterial({ color: 0x2F2F2F }));
+
+                console.log(this.mesh2.geometry);
+                this.mesh2.geometry.translate(0.7 * this.dim.x, 0, -this.dim.z * 1.1 / 2);
+
+
+
+                let shape2 = new THREE.Shape();
+                let h = this.dim.y * 0.25;
+                let w = this.dim.z;
+                let tx = -w / 2;
+                let ty = 0;// this.dim.y / 2;// -h / 2;
+                let r = (h * 0.75) / 2;
+
+
+
+                shape2.moveTo(tx + 0, ty + 0);
+                shape2.lineTo(tx + 0, ty + h);
+                shape2.lineTo(tx + w, ty + h);
+                shape2.lineTo(tx + w, ty + 0);
+                shape2.lineTo(tx + 0, ty + 0);
+
+                for(let i = 0; i < 4; i++){
+                    let s = new THREE.Shape();
+                    s.moveTo(tx  + (w / 4) * i + ((w / 4) - 2 * r) / 2, ty + h / 2);
+                    s.arc(r, 0, r, 0, 2 * Math.PI, false);
+                  shape2.holes.push(s);
+                }
+
+
+                // shape2.moveTo(this.dim.x * 0.2 + this.trans.x, 0 + this.trans.y);
+                // shape2.arc(-this.dim.x * 0.15 / 2, 0, this.dim.x * 0.15 / 2, 0, Math.PI, false);
+
+                let extrudeSettings2 = {
+                    steps: 2,
+                    depth: this.dim.x * 0.6,
+                    bevelEnabled: true,
+                    bevelThickness: 0,
+                    bevelSegment: 2,
+                    bevelSize: 0
+                };
+                this.mesh3 = new THREE.Mesh(new THREE.ExtrudeGeometry(shape2, extrudeSettings2),
+                    new THREE.MeshPhongMaterial({ color: 0x024F02 }));
+          //      this.mesh3.geometry.translate(0, this.dim.y * 0.5 + h / 2, -this.dim.x * 0.6 / 2);
+            
+            //    this.mesh3.rotation.y = Math.PI / 2;
+            //   this.mesh3.rotation.x = -Math.PI / 4;
+           this.mesh3.rotateY(Math.PI / 2);
+          //     this.mesh3.geometry.translate(0, 0, -0.2 * this.dim.x);
+               this.mesh3.position.x = -this.dim.x / 2;
+               this.mesh3.position.y = this.dim.y / 2;
+                console.log(this.mesh3.geometry);
+               
+               
+
+       //         this.mesh3.geometry.translate(0.7 * this.dim.x, 0, -this.dim.z * 1.1 / 2);
+        //        this.mesh3.position.y = this.dim.y / 2;
+
+                this.SAM.add(this.mesh, this.mesh1, this.mesh2, this.mesh3);
+
+                this.SAM.rotation.y = 3 * Math.PI / 2;
+
+
             }
 
-            getMesh(){
-                return this.mesh;
+            getMesh() {
+                return this.SAM;
+            }
+
+            rotateY(angle) {
+                //  return;
+
+
+                let cosB = Math.cos(angle);
+                let sinB = Math.sin(angle);
+                let x = this.SAM.position.x;
+                let z = this.SAM.position.z;
+                let px = this.scale.x * 0;
+                let pz = this.dim.z / 2;
+                let xx = (x * cosB - z * sinB + px * (1 - cosB) + pz * sinB);
+                let zz = (x * sinB + z * cosB + pz * (1 - cosB) - px * sinB);
+
+                //           console.log(this.SAM.getWorldPosition());
+
+                //         this.SAM.position.x = xx;
+                //         this.SAM.position.z = zz;
+
+                //        this.SAM.updateMatrix();
+                // let tx = (this.SAM.position.x * cosB + this.SAM.position.z * -sinB + this.dim.x * this.scale * (1 - cosB) + this.dim.z * this.scale * sinB);
+                // let tz = (this.SAM.position.x * sinB + this.SAM.position.z * cosB + this.dim.z * this.scale * (1 - cosB) - this.dim.x * this.scale * sinB);
+                // console.log("tx = " + tx + " tz = " + tz);
+                //  this.SAM.position.x = -this.dim.x * this.scale / 2;
+                // this.SAM.position.y = -this.dim.y * this.scale / 2;
+                //  this.SAM.position.z = -this.dim.z / 2;//-this.dim.z * this.scale;
+                // this.SAM.position.z = -this.dim.z / 2 / this.scale.z;
+                // //  this.SAM.updateMatrix();
+          //      this.SAM.rotation.y = angle / 2;
+          
+  this.mesh3.rotateX(toRad(-0.1));  
+;
+                // this.mesh3.rotation.x = angle;
+                //  this.SAM.updateMatrix();
+                //    this.SAM.position.z = (this.dim.x / 2/ this.scale.x * Math.cos(angle) + this.dim.z / 2 / this.scale.z * Math.sin(-angle));
+                //    this.SAM.position.x = (this.dim.x / 2 / this.scale.x * Math.sin(angle) + this.dim.z / 2 / this.scale.z * Math.cos(angle));
+                //     this.SAM.updateMatrix();
+                // this.SAM.position.x = this.dim.x * this.scale / 2;
+                // this.SAM.position.y = this.dim.y * this.scale / 2;
+                //               this.SAM.position.z = this.dim.z * this.scale;
+
+                //  this.SAM.position.x = tx;
+                // this.SAM.position.z = tz;
+
+                //      this.SAM.position.x -= 0.0025;
             }
         }
 
@@ -310,9 +452,9 @@
                 0.1, // inner view
                 1000 // outer view
             );
-            camera.position.z = 1;
-            camera.position.y = 1.5;
-            camera.position.x = 0.0;
+            camera.position.z = 5;
+            camera.position.y = 2.5;
+            camera.position.x = -1;
 
             //     camera.position.x = 0;
 
@@ -412,6 +554,7 @@
 
 
         const ship = new Ship();
+
         const sam = new SAMLauncher(0, 0);
 
         //    ship.yaw(toRad(5));
@@ -440,7 +583,7 @@
         }
         var time = 0;
         const duration = Number.MAX_VALUE - Number.MAX_VALUE + 1.2; // 2 seconds maneurverA
-
+        var angle = 0;
 
 
         var repeatMe = function () {
@@ -456,10 +599,12 @@
 
             //        clock.getDelta();
             //        time = clock.elapsedTime;
-       //     ship.move(camera, light)
+            //     ship.move(camera, light)
 
             //  controls.update();
-sam.getMesh().rotation.y += toRad(0.5);
+            //           sam.getMesh().rotation.y += toRad(0.5);
+            angle += toRad(0.5);
+            sam.rotateY(angle);
 
             renderer.render(scene, camera);
 
