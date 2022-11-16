@@ -12,12 +12,24 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/102/three.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.5/dat.gui.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.2/TweenMax.min.js"></script>
+    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script> -->
+
     <script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
-    <!--    <script src="OrbitControls.js"></script> -->
+    <!-- <script src="OrbitControls.js"></script> -->
 
     <script type="text/javascript">
 
         class SAMLauncher {
+            count = 0;
+            angle = 0;
+            missiles = [];
+            IDLE = 0;
+            ENGAGING = 1;
+            RETRACTING = 2;
+            READY = 3;
+            WAITING = 4;
+            state = this.IDLE;
+            dist = 0;
             dim = {
                 x: 1,
                 y: 0.32,
@@ -29,14 +41,60 @@
                 z: 0
             };
             scale = {
-                x: 2,
-                y: 2,
-                z: 2
+                x: 1.5,
+                y: 1.5,
+                z: 1.5
             };
-            constructor(x, y) {
+
+            getX(){
+                return this.SAM.position.x;
+            }
+            getY(){
+                return this.SAM.position.y;
+            }
+            getZ(){
+                return this.SAM.position.z;
+            }
+            setX(x) {
+                this.SAM.position.x = x;
+                for (let i = 0; i < 4; i++) {
+                    if (i >= this.count) {
+                        this.missiles[i].getMesh().position.x = x;
+                        //unfired move
+                    } else {
+                        // fired ignore
+                    }
+                }
+            }
+            setY(y) {
+                this.SAM.position.y = y;
+                for (let i = 0; i < 4; i++) {
+                    if (i >= this.count) {
+                        this.missiles[i].getMesh().position.y = y;
+                        //unfired move
+                    } else {
+                        // fired ignore
+                    }
+                }
+            }
+            setZ(z) {
+                this.SAM.position.z = z;
+                for (let i = 0; i < 4; i++) {
+                    if (i >= this.count) {
+                        console.log("HOwm any times " + i);
+                        this.missiles[i].setZ(z - this.dim.x / 2);
+                        //unfired move
+                    } else {
+                        // fired ignore
+                    }
+                }
+            }
+            constructor(x, z) {
+                this.state = 0;
                 this.dim.x *= this.scale.x;
                 this.dim.y *= this.scale.y;
                 this.dim.z *= this.scale.z;
+                this.trans.x = -this.dim.x / 2;
                 this.SAM = new THREE.Group();
                 let shape = new THREE.Shape();
                 shape.moveTo(0 + this.trans.x, 0 + this.trans.y);
@@ -61,7 +119,7 @@
                     bevelSegment: 2
                 };
                 let geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings)
-                console.log(-this.dim.z / 2);
+                // console.log(-this.dim.z / 2);
                 geometry.translate(0, 0, this.dim.z / -2);
                 this.mesh = new THREE.Mesh(geometry,
                     new THREE.MeshPhongMaterial({ color: 0x00ff00 }));
@@ -70,7 +128,7 @@
 
                 let shape1 = new THREE.Shape();
                 shape1.moveTo(this.dim.x * 0.2 + this.trans.x, 0 + this.trans.y);
-                shape1.arc(-this.dim.x * 0.15 / 2, 0, this.dim.x * 0.15 / 2, 0, Math.PI, false);
+                shape1.arc(-this.dim.x * 0.15 / 2, 0, this.dim.x * 0.15 / 2, 0, 2 * Math.PI, false);
 
                 let extrudeSettings1 = {
                     steps: 2,
@@ -88,7 +146,7 @@
                 this.mesh2 = new THREE.Mesh(new THREE.ExtrudeGeometry(shape1, extrudeSettings1),
                     new THREE.MeshPhongMaterial({ color: 0x2F2F2F }));
 
-                console.log(this.mesh2.geometry);
+                // console.log(this.mesh2.geometry);
                 this.mesh2.geometry.translate(0.7 * this.dim.x, 0, -this.dim.z * 1.1 / 2);
 
 
@@ -108,11 +166,11 @@
                 shape2.lineTo(tx + w, ty + 0);
                 shape2.lineTo(tx + 0, ty + 0);
 
-                for(let i = 0; i < 4; i++){
+                for (let i = 0; i < 4; i++) {
                     let s = new THREE.Shape();
-                    s.moveTo(tx  + (w / 4) * i + ((w / 4) - 2 * r) / 2, ty + h / 2);
+                    s.moveTo(tx + (w / 4) * i + ((w / 4) - 2 * r) / 2, ty + h / 2);
                     s.arc(r, 0, r, 0, 2 * Math.PI, false);
-                  shape2.holes.push(s);
+                    shape2.holes.push(s);
                 }
 
 
@@ -129,25 +187,31 @@
                 };
                 this.mesh3 = new THREE.Mesh(new THREE.ExtrudeGeometry(shape2, extrudeSettings2),
                     new THREE.MeshPhongMaterial({ color: 0x024F02 }));
-          //      this.mesh3.geometry.translate(0, this.dim.y * 0.5 + h / 2, -this.dim.x * 0.6 / 2);
-            
-            //    this.mesh3.rotation.y = Math.PI / 2;
-            //   this.mesh3.rotation.x = -Math.PI / 4;
-           this.mesh3.rotateY(Math.PI / 2);
-          //     this.mesh3.geometry.translate(0, 0, -0.2 * this.dim.x);
-               this.mesh3.position.x = -this.dim.x / 2;
-               this.mesh3.position.y = this.dim.y / 2;
-                console.log(this.mesh3.geometry);
-               
-               
+                //      this.mesh3.geometry.translate(0, this.dim.y * 0.5 + h / 2, -this.dim.x * 0.6 / 2);
 
-       //         this.mesh3.geometry.translate(0.7 * this.dim.x, 0, -this.dim.z * 1.1 / 2);
-        //        this.mesh3.position.y = this.dim.y / 2;
+                //    this.mesh3.rotation.y = Math.PI / 2;
+                //   this.mesh3.rotation.x = -Math.PI / 4;
+                this.mesh3.rotateY(Math.PI / 2);
+                //     this.mesh3.geometry.translate(0, 0, -0.2 * this.dim.x);
+                this.mesh3.position.x = -this.dim.x / 2;
+                this.mesh3.position.y = this.dim.y / 2;
+                // console.log(this.mesh3.geometry);
+
+
+
+                //         this.mesh3.geometry.translate(0.7 * this.dim.x, 0, -this.dim.z * 1.1 / 2);
+                //        this.mesh3.position.y = this.dim.y / 2;
 
                 this.SAM.add(this.mesh, this.mesh1, this.mesh2, this.mesh3);
 
                 this.SAM.rotation.y = 3 * Math.PI / 2;
-
+                this.SAM.position.x = x;
+                this.SAM.position.z = z;
+                this.SAM.position.y = this.dim.x * 0.15 / 2;
+                for (let index = 0; index < 4; index++) {
+                    const e = new Missile(this.dim, this.scale, index);
+                    this.missiles.push(e);
+                }
 
             }
 
@@ -155,50 +219,99 @@
                 return this.SAM;
             }
 
-            rotateY(angle) {
-                //  return;
+            addMissiles(scene) {
+                this.missiles.forEach((m) => {
+                    scene.add(m.getMesh());
+                });
+                console.log("Missiles added");
+            }
 
 
-                let cosB = Math.cos(angle);
-                let sinB = Math.sin(angle);
-                let x = this.SAM.position.x;
-                let z = this.SAM.position.z;
-                let px = this.scale.x * 0;
-                let pz = this.dim.z / 2;
-                let xx = (x * cosB - z * sinB + px * (1 - cosB) + pz * sinB);
-                let zz = (x * sinB + z * cosB + pz * (1 - cosB) - px * sinB);
 
-                //           console.log(this.SAM.getWorldPosition());
+            move() {
+                let difference = Math.sqrt((ship.getY() - this.SAM.position.y) ** 2 + (ship.getZ() - this.SAM.position.z) ** 2);
+                console.log("Difference: " + difference);
+                if (this.state === this.IDLE && this.count < 4) {
+                    
+                    
+                    if (difference < 60) {
+                        console.log("Engage: Start engagin");
+                        this.engage();
+                    }
+                } else if (this.state === this.ENGAGING) {
+                    console.log("SAM: Engaging target");
+                    this.engaging();
+                } else if (this.state === this.RETRACTING) {
+                    this.retracting();
+                } else if (this.state == this.READY) {
+                    if (difference < 55) {
+                        this.fire();
+                        console.log("Firing: Missile fired");
+                        if (this.count < 4) {
+                            this.state = this.WAITING;
+                            window.setTimeout(() => {
+                                this.engage();
+                            }, 1200);
+                        }
+                    }
+                }
 
-                //         this.SAM.position.x = xx;
-                //         this.SAM.position.z = zz;
+                this.missiles.forEach((m) => {
+                    m.move();
+                })
 
-                //        this.SAM.updateMatrix();
-                // let tx = (this.SAM.position.x * cosB + this.SAM.position.z * -sinB + this.dim.x * this.scale * (1 - cosB) + this.dim.z * this.scale * sinB);
-                // let tz = (this.SAM.position.x * sinB + this.SAM.position.z * cosB + this.dim.z * this.scale * (1 - cosB) - this.dim.x * this.scale * sinB);
-                // console.log("tx = " + tx + " tz = " + tz);
-                //  this.SAM.position.x = -this.dim.x * this.scale / 2;
-                // this.SAM.position.y = -this.dim.y * this.scale / 2;
-                //  this.SAM.position.z = -this.dim.z / 2;//-this.dim.z * this.scale;
-                // this.SAM.position.z = -this.dim.z / 2 / this.scale.z;
-                // //  this.SAM.updateMatrix();
-          //      this.SAM.rotation.y = angle / 2;
-          
-  this.mesh3.rotateX(toRad(-0.1));  
-;
-                // this.mesh3.rotation.x = angle;
-                //  this.SAM.updateMatrix();
-                //    this.SAM.position.z = (this.dim.x / 2/ this.scale.x * Math.cos(angle) + this.dim.z / 2 / this.scale.z * Math.sin(-angle));
-                //    this.SAM.position.x = (this.dim.x / 2 / this.scale.x * Math.sin(angle) + this.dim.z / 2 / this.scale.z * Math.cos(angle));
-                //     this.SAM.updateMatrix();
-                // this.SAM.position.x = this.dim.x * this.scale / 2;
-                // this.SAM.position.y = this.dim.y * this.scale / 2;
-                //               this.SAM.position.z = this.dim.z * this.scale;
 
-                //  this.SAM.position.x = tx;
-                // this.SAM.position.z = tz;
+            }
 
-                //      this.SAM.position.x -= 0.0025;
+            fire() {
+
+                if (this.count < 4) {
+                    // console.log("Did i fire?");
+                    this.missiles[this.count].fire();
+                   
+                }
+                if (this.count == 3) {
+                    this.state = this.RETRACTING;
+                }
+                ++this.count;
+            }
+
+            engage() {
+                let dy = ship.getY() - this.getY();
+                let dx = ship.getX() - this.getX();
+                let dz = ship.getZ() - this.getZ();
+                console.log("XXX: " + ((0.25 ** 2) / 0.001) / Math.sqrt(dz ** 2, dy ** 2));
+                this.engageAngle = Math.atan2(dy, dz) * 5;
+                if(toDeg(this.engageAngle) > 45){
+            //        this.engageAngle /= 1.15;
+                }
+                console.log("EngageX at: " + toDeg(Math.atan2(dy, dz)))
+
+                this.state = this.ENGAGING;
+            }
+
+            retracting() {
+                if (toDeg(this.angle) < 0) {
+                    this.angle += toRad(.1);
+                    this.mesh3.rotateX(toRad(.1));
+
+                } else {
+                    this.mesh3.rotateX(-this.angle);
+                    this.state = this.IDLE;
+                }
+            }
+
+            engaging() {
+                console.log("Engaging at" + toDeg(this.engageAngle));
+                if (toDeg(this.angle) > -toDeg(this.engageAngle)) {
+                    this.angle -= toRad(1);
+                    this.mesh3.rotateX(toRad(-1));
+                    this.missiles.forEach((m) => {
+                        m.getMesh().rotation.x += toRad(-1);
+                    });
+                } else {
+                    this.state = this.READY;
+                }
             }
         }
 
@@ -216,7 +329,7 @@
             }
 
             constructor(x, y, z, pitch, yaw, scene) {
-                console.log("x: " + x + " y: " + y + " z: " + z + " yaw: " + yaw + " pitch: " + pitch);
+                // console.log("x: " + x + " y: " + y + " z: " + z + " yaw: " + yaw + " pitch: " + pitch);
                 this.scene = scene;
                 this.pitch = pitch;
                 this.yaw = yaw;
@@ -235,7 +348,7 @@
                 this.velocity.x = this.RELEASE_VELOCITY * Math.sin(yaw);
                 this.velocity.y = this.RELEASE_VELOCITY * Math.sin(-pitch);
 
-                console.log("ZZ + " + this.getZ())
+                // console.log("ZZ + " + this.getZ())
             }
 
             setX(x) {
@@ -263,7 +376,7 @@
             }
 
             move() {
-                console.log("We are moving (x,y,z) (" + this.getX() + ", " + this.getY() + ", " + this.getZ() + ")");
+                // console.log("We are moving (x,y,z) (" + this.getX() + ", " + this.getY() + ", " + this.getZ() + ")");
                 let xU = this.velocity.x; // Initial velocity along x-axis
                 let yU = this.velocity.y; // Initial velocity along y-axis
                 let zU = this.velocity.z;// Initial velocity along z-axis
@@ -284,6 +397,153 @@
 
         }
 
+        class Missile {
+            IDLE = 0;
+            FLYIING = 1;
+            EXPLODING = 2;
+            state = this.IDLE;
+            target_Angle = 0;
+
+            velocity = {
+                x: 0,
+                y: 0,
+                z: 0
+            }
+            acc = {
+                x: 0,
+                y: -0.001,
+                z: 0
+            }
+
+            constructor(dim, scale, i) {
+                this.dim = dim;
+                this.scale = scale;
+                let h = this.dim.y * 0.25;
+                let w = this.dim.z;
+                let tx = -w / 2;
+                let ty = 0;// this.dim.y / 2;// -h / 2;
+                let r = (h * 0.75) / 2;
+                //           for (let i = 0; i < 4; i++) {
+                let s = new THREE.Shape();
+                s.moveTo(tx + (w / 4) * i + ((w / 4) - 2 * r) / 2, ty + h / 2);
+                s.arc(r, 0, r, 0, 2 * Math.PI, false);
+                //  shape2.holes.push(s);
+                //          }
+                let extrudeSettings2 = {
+                    steps: 2,
+                    depth: this.dim.x * 0.6,
+                    bevelEnabled: true,
+                    bevelThickness: 0,
+                    bevelSegment: 2,
+                    bevelSize: 0
+                };
+                this.vehicle = new THREE.Mesh(new THREE.ExtrudeGeometry(s, extrudeSettings2),
+                    new THREE.MeshPhongMaterial({ color: 0xFEFEFE }));
+
+
+                this.vehicle.position.z -= dim.x / 2;
+                //         this.vehicle.rotateY(1 * Math.PI / 2);
+                // this.vehicle.position.x = -this.dim.z / 2;
+                this.vehicle.position.y = this.dim.y / 2 + this.dim.x * 0.15 / 2;
+                
+                
+            }
+
+            getX() {
+                return this.vehicle.position.x;
+            }
+            getY() {
+                return this.vehicle.position.y;
+            }
+            getZ() {
+                return this.vehicle.position.z;
+            }
+            setX(x) {
+                this.vehicle.position.x = x;
+            }
+            setY(y) {
+                this.vehicle.position.y = y;
+            }
+            setZ(z) {
+                this.vehicle.position.z = z;
+            }
+
+            getMesh() {
+                return this.vehicle;
+            }
+            fire() {
+                let dy = ship.getY() - this.getY();
+                let dx = ship.getX() - this.getX();
+                let dz = ship.getZ() - this.getZ() ;
+                this.target_Angle = Math.atan2(dx, dz) * 1;// * 2.5 * (6 / Math.sqrt(dz**2 + dy**2));
+                if(toDeg(this.target_Angle) > 45){
+                    this.target_Angle = toDeg(30);
+                }
+
+                console.log("XXX --- " + toDeg(this.target_Angle));
+      //          console.log("EngageX at: " + toDeg(Math.atan2(dy, dz)))
+                this.state = this.FLYIING;
+                // console.log("Check: " + toDeg(Math.PI / 2 + this.vehicle.rotation.x));
+                let vel = 0.35;
+x
+                this.velocity.y = Math.cos(Math.PI / 2 + this.vehicle.rotation.x) * vel;
+                this.velocity.z = Math.sin(Math.PI / 2 + this.vehicle.rotation.x) * vel;
+                this.velocity.x = Math.sin(this.vehicle.rotation.y) * vel;
+
+
+                // console.log("MissileFired");
+            }
+            move() {
+
+
+
+
+
+
+
+                if (this.state === this.IDLE) {
+                    //         console.log("IDLE MISSILE");
+                } else if (this.state === this.FLYIING) {
+                    let ux = this.velocity.x;
+                    let uy = this.velocity.y;
+                    let uz = this.velocity.z;
+
+                    let vz = uz + this.acc.z;
+                    let vx = Math.sin(this.vehicle.rotation.y) * uz + this.acc.x;
+                    let vy = uy + this.acc.y;
+
+                    let x = this.getX() + (ux + vx) / 2;
+                    let z = this.getZ() + (uz + vz) / 2;
+                    let y = this.getY() + (uy + vy) / 2;
+
+                    let dx = ship.getX() - this.getX();
+                    let dz = ship.getZ() - this.getZ();
+
+
+                    let angX = Math.atan2(vy, vz);
+                    //                   let angY = Math.atan2(dx, dz);
+
+                    let angY = this.target_Angle / (dz / (vz - ship.velocity.z));
+
+
+                    this.velocity.x = vx;
+                    this.velocity.y = vy;
+                    this.velocity.z = vz;
+                    this.setX(x);
+                    this.setY(y);
+                    this.setZ(z);
+                    this.vehicle.rotation.x = -angX;
+                    if (Math.abs(this.vehicle.rotation.y) < Math.abs(this.target_Angle)) {
+                        this.vehicle.rotation.y += angY;
+                    }
+                    // console.log("RRR: " + toDeg(this.vehicle.rotation.y));
+                } else if (this.state === this.EXPLODING) {
+                    // console.log("EXPLODING MISSILE");
+                }
+
+            }
+        }
+
         class Ship {
             weapons = [];
             LEFT = 37;
@@ -291,12 +551,27 @@
             DOWN = 40;
             UP = 38;
             FIRE_CANNON = 70;
+            dim = {
+                x: 68,
+                y: 100,
+                z: 1
+            };
+            trans = {
+                x: 0,
+                y: 0,
+                z: 0
+            }
+            scale = {
+                x: 1 / 100,
+                y: 1 / 100,
+                z: 1 / 100
+            }
             cameraOffset = {
                 x: 0,
                 y: 1,
                 z: 3
             };
-            MAX_VELOCITY = 0.1;
+            MAX_VELOCITY = 0.05;
             velocity = {
                 x: 0,
                 y: 0,
@@ -304,66 +579,182 @@
             };
             acc = {
                 x: 0,
-                y: 0,
-                z: 0.001
+                y: 0.000,
+                z: 0.0001
             }
             constructor() {
+                this.dim.x *= this.scale.x;
+                this.dim.y *= this.scale.y;
+                this.dim.z *= this.scale.z;
+
+                this.trans.x = -this.dim.x / 2;
+                this.trans.y = -this.dim.y / 2;
+
+                let radius = this.dim.x / 2 - (33.3 * this.scale.x);
+                let height = 17.89 * this.scale.y;
+                // console.log("Radius = " + radius + " Height = " + height + " dim.x = " + this.dim.x);
+
+                let noseGeo = new THREE.ConeGeometry(radius, height, 32);
+                let material = new THREE.MeshPhongMaterial({ color: 0x002200 });
+                this.nose = new THREE.Mesh(noseGeo, material);
+                noseGeo.translate(0, this.trans.y + this.dim.y - height / 2, 0);
+
+                let cockHeight = 11.32 * this.scale.y;
+                let cockpitGeo = new THREE.CylinderGeometry(radius, (this.dim.x / 2 - 25.41 * this.scale.x) / 2, cockHeight);
+                this.cockpit = new THREE.Mesh(cockpitGeo, material);
+                cockpitGeo.translate(0, this.trans.y + this.dim.y - height - cockHeight / 2, 0);
+
+                /* 
+                                let intakeHeight = 22.71 * this.scale.y;
+                                let intakeGeo = new THREE.BoxGeometry(this.dim.x / 2 - 25.41 * this.scale.x, intakeHeight, this.dim.x / 2 - 25.41 * this.scale.x);
+                                this.intake = new THREE.Mesh(intakeGeo, material);
+                                intakeGeo.translate(0, this.trans.y + this.dim.y - height - cockHeight - intakeHeight / 2, 0); 
+                        */
+
+
+                let intakeHeight = 22.71 * this.scale.y;
+                let intakeGeo = new THREE.CylinderGeometry((this.dim.x / 2 - 25.41 * this.scale.x) / 2, (this.dim.x / 2 - 25.41 * this.scale.x), intakeHeight);
+                this.intake = new THREE.Mesh(intakeGeo, material);
+                intakeGeo.translate(0, this.trans.y + this.dim.y - height - cockHeight - intakeHeight / 2, 0);
+
+                let wingHeight = 26.14 * this.scale.y;
+                let wingShape = new THREE.Shape();
+                wingShape.moveTo(this.trans.x + 25.41 * this.scale.x, this.trans.y + 21.94 * this.scale.y);
+                wingShape.lineTo(this.trans.x + 0, this.trans.y + 18.36 * this.scale.y);
+                wingShape.lineTo(this.trans.x + 0, this.trans.y + 28.37 * this.scale.y);
+                wingShape.lineTo(this.trans.x + 25.41 * this.scale.x, this.trans.y + 48.08 * this.scale.y);
+                // wingShape.lineTo(this.trans.x + 25.41 * this.scale.x, this.trans.y + 70.79 * this.scale.y);
+                wingShape.lineTo(this.trans.x + 30.67 * this.scale.x, this.trans.y + (48.08 + 3) * this.scale.y);
+
+                wingShape.lineTo(this.trans.x + (this.dim.x / this.scale.x - 30.67) * this.scale.x, this.trans.y + (48.08 + 3) * this.scale.y);
+                // wingShape.lineTo(this.trans.x + (this.dim.x / this.scale.x - 25.41) * this.scale.x, this.trans.y + 70.79 * this.scale.y);
+                wingShape.lineTo(this.trans.x + (this.dim.x / this.scale.x - 25.41) * this.scale.x, this.trans.y + 48.08 * this.scale.y);
+                wingShape.lineTo(this.trans.x + (this.dim.x / this.scale.x - 0) * this.scale.x, this.trans.y + 28.37 * this.scale.y);
+                wingShape.lineTo(this.trans.x + (this.dim.x / this.scale.x - 0) * this.scale.x, this.trans.y + 18.36 * this.scale.y);
+                wingShape.lineTo(this.trans.x + (this.dim.x / this.scale.x - 25.41) * this.scale.x, this.trans.y + 21.94 * this.scale.y);
+                let extrudeSettings = {
+                    steps: 1,
+                    depth: 3 * this.scale.z,
+                    bevelEnabled: true,
+                    bevelThickness: 0,
+                    bevelSize: 0,
+                    bevelSegment: 2
+                };
+                let wingGeo = new THREE.ExtrudeGeometry(wingShape, extrudeSettings)
+                this.wing = new THREE.Mesh(wingGeo, material);
+
+                let fuselageHeight = 42.08 * this.scale.y;
+                let fuselageGeo = new THREE.CylinderGeometry((this.dim.x / 2 - 25.41 * this.scale.x), (this.dim.x / 2 - 25.41 * this.scale.x),
+                    fuselageHeight);
+                this.fuselage = new THREE.Mesh(fuselageGeo, material);
+                fuselageGeo.translate(0, this.trans.y + 6 * this.scale.y + fuselageHeight / 2, 0);
+
+
+                let tailShape = new THREE.Shape();
+                tailShape.moveTo(this.trans.x + 25.41 * this.scale.x, this.trans.y + 6 * this.scale.y);
+                tailShape.lineTo(this.trans.x + 15 * this.scale.x, this.trans.y + 0 * this.scale.y);
+                tailShape.lineTo(this.trans.x + 11.90 * this.scale.x, this.trans.y + 4.63 * this.scale.y);
+                tailShape.lineTo(this.trans.x + 25.41 * this.scale.x, this.trans.y + 18.8 * this.scale.y);
+
+                tailShape.lineTo(this.trans.x + (this.dim.x / this.scale.x - 25.41) * this.scale.x, this.trans.y + 18.8 * this.scale.y);
+                tailShape.lineTo(this.trans.x + (this.dim.x / this.scale.x - 11.90) * this.scale.x, this.trans.y + 4.63 * this.scale.y);
+                tailShape.lineTo(this.trans.x + (this.dim.x / this.scale.x - 15) * this.scale.x, this.trans.y + 0 * this.scale.y);
+                tailShape.lineTo(this.trans.x + (this.dim.x / this.scale.x - 25.41) * this.scale.x, this.trans.y + 6 * this.scale.y);
+
+                let tailGeo = new THREE.ExtrudeGeometry(tailShape, extrudeSettings);
+                this.tail = new THREE.Mesh(tailGeo, material);
+
+                let engineHeight = 6 * this.scale.y;
+                let engineGeo = new THREE.CylinderGeometry((this.dim.x / 2 - 25.41 * this.scale.x), (this.dim.x / 2 - 27 * this.scale.x), engineHeight);
+                this.engine = new THREE.Mesh(engineGeo, new THREE.MeshPhongMaterial({ color: 0x000F00 }));
+                engineGeo.translate(0, this.trans.y + engineHeight / 2, 0);
+
+                this.ship = new THREE.Group();
+
                 this.sprite = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.05, 0.375), new THREE.MeshPhongMaterial({ color: 0x00ff00 }));
                 this.sprite.position.y = 1;
                 this.sprite.castShadow = true;
+
+                this.ship.add(this.nose, this.cockpit, this.intake, this.wing, this.fuselage, this.tail, this.engine);
+                this.ship.rotateX(-Math.PI / 2);
             }
 
             getX() {
-                return this.sprite.position.x;
+                return this.ship.position.x;
             }
             getY() {
-                return this.sprite.position.y;
+                return this.ship.position.y;
             }
             getZ() {
-                return this.sprite.position.z;
+                return this.ship.position.z;
             }
 
             setX(x) {
-                return this.sprite.position.x = x;
+                this.ship.position.x = x;
             }
             setY(y) {
-                return this.sprite.position.y = y;
+                this.ship.position.y = y;
             }
             setZ(z) {
-                return this.sprite.position.z = z;
+                this.ship.position.z = z;
             }
 
-            roll(angle) {
-                this.sprite.rotation.z += angle;
-            }
             yaw(angle) {
-                this.sprite.rotation.y += angle;
+                this.ship.rotation.z += angle;
+            }
+            roll(angle) {
+                this.ship.rotation.y += angle;
             }
             pitch(angle) {
-                this.sprite.rotation.x += angle;
+                this.ship.rotation.x += angle;
+            }
+
+            getYaw() {
+                return this.ship.rotation.z;
+            }
+
+            getRoll() {
+                return this.ship.rotation.y;
+            }
+
+            getPitch() {
+                return this.ship.rotation.x + Math.PI / 2;
             }
 
 
             handleKeyEvent(code, scene) {
-                console.log("Key pressed working!!");
+                // console.log("Key pressed working!!");
                 if (code == this.RIGHT) {
-                    this.sprite.rotation.y += toRad(-1);
-                    this.sprite.rotation.z += toRad(-5);
+                    this.ship.rotation.y += toRad(5);
+                    this.ship.rotation.z += toRad(-2);
+
+
+
                 } else if (code == this.LEFT) {
-                    this.sprite.rotation.y += toRad(1);
-                    this.sprite.rotation.z += toRad(5);
+                    this.ship.rotation.y += toRad(-5);
+                    this.ship.rotation.z += toRad(2);
+
+
                 } else if (code == this.DOWN) {
-                    this.sprite.rotation.x += toRad(1);
+                    this.ship.rotation.x += toRad(1);
 
                 } else if (code == this.UP) {
-                    this.sprite.rotation.x += toRad(-1);
+                    this.ship.rotation.x += toRad(-1);
                 } else if (code == this.FIRE_CANNON) {
-                    let cannon = new Cannon(this.getX(), this.getY(), this.getZ(), this.sprite.rotation.x, this.sprite.rotation.z, scene);
+                    let cannon = new Cannon(this.getX(), this.getY(), this.getZ(), this.getPitch(), this.ship.rotation.z, scene);
                     this.weapons.push(cannon);
                     cannon.fire();
-                    //      scene.add(cannon.getMesh());
+                    /* if (sam.state == sam.IDLE) {
+                        // console.log("Engaging");
+                        sam.engage();
+                    }
+                    else if (sam.state === sam.READY) {
+                        // console.log("Firing");
+                        sam.fire();
+                    } */
                 }
             }
+
             count = 0;
             move(camera, light) {
 
@@ -372,75 +763,133 @@
                 });
 
                 let uz = this.velocity.z;
-                let vz = uz + this.acc.z;
-
-
-                let cosB = Math.cos(this.sprite.rotation.y);
-                let sinB = Math.sin(this.sprite.rotation.y);
-
-                let dz = Math.cos(this.sprite.rotation.y) * -vz * Math.cos(this.sprite.rotation.x);
-                let dx = Math.sin(this.sprite.rotation.y) * -vz;
-                let dy = Math.sin(this.sprite.rotation.x) * vz;
-
-                this.velocity.z = Math.min(this.MAX_VELOCITY, -dz);
+                let vz = uz - this.acc.z;
+                // console.log("uz = " + uz.toFixed(4) + " vz = " + vz.toFixed(4) + " g = " + this.acc.y.toFixed(4));
+                let cosB = Math.cos(this.ship.rotation.y);
+                /*               let sinB = Math.sin(this.ship.rotation.y);
+              
+                              let dz = Math.cos(this.ship.rotation.y) * -vz * Math.cos(this.ship.rotation.x);
+                              let dx = Math.sin(this.ship.rotation.y) * -vz;
+                              let dy = Math.sin(this.ship.rotation.x) * vz;
+               */
 
 
                 let px = this.getX();
                 let pz = this.getZ();
+                let py = this.getY();
+                // console.log("Pitch: " + toDeg(this.getPitch()).toFixed(2) + "degrees, Yaw: " + toDeg(this.getYaw()).toFixed(2) + "degrees, Roll: " + toDeg(this.getRoll()).toFixed(2));
 
-                this.setY(this.getY() + dy);
-                this.setX(this.getX() * cosB + this.getZ() * -sinB + (px + dx) - px * cosB + pz * sinB);
-                this.setZ(this.getX() * sinB + this.getZ() * cosB + (pz + dz) - pz * cosB - px * sinB);
+                let tx = Math.sin(this.getYaw()) * -vz;
+                let tz = Math.cos(this.getYaw()) * -vz * Math.cos(this.getPitch());
+                let ty = Math.sin(this.getPitch()) * vz;
 
-                let delta = clock.getDelta();
-                if (this.sprite.rotation.z !== 0) {
-                    let diff = this.sprite.rotation.z;
+                this.velocity.y = Math.max(this.MAX_VELOCITY, ty);
+                this.velocity.x = Math.max(this.MAX_VELOCITY, tx);
+                this.velocity.z = Math.max(this.MAX_VELOCITY, tz);
 
-                    this.sprite.rotation.z -= (diff * delta);
+
+                let sinA = Math.sin(this.getYaw());
+                let cosA = Math.cos(this.getYaw());
+                let SinB = Math.sin(this.getPitch());
+
+                let dx = px * cosA - pz * sinA + (px + tx) - px * cosA + pz * sinA;
+                let dz = px * sinA + pz * cosA + (pz + tz) - pz * cosA - px * sinA;
+                let dy = py + ty;
+                // console.log("tz = " + tz + " ty = " + ty + " tx = " + tx);
+                // console.log("dx = " + dx + " dy = " + dy + " dz = " + dz);
+
+                //                 let minusI = new THREE.Matrix4();
+                //                 minusI.set(
+                //                     -1, 0, 0, 0,
+                //                     0, -1, 0, 0,
+                //                     0, 0, -1, 0,
+                //                     0, 0, 0, 1
+                //                 );
+
+                //  //               this.ship.matrixAutoUpdate = false;
+
+                //                 let translation = new THREE.Matrix4();
+                //                 translation.set(
+                //                     1, 0, 0, tx,
+                //                     0, 1, 0, ty,
+                //                     0, 0, 1, tz,
+                //                     0, 0, 0, 1);
+
+                //       translation.makeTranslation(tx, ty, tz);
+                //     console.log(translation);
+
+                // let mTranslation = new THREE.Matrix4();
+                // mTranslation.multiplyMatrices(translation, minusI);
+
+                // let m = this.ship.matrixWorld.clone();
+
+
+                // let position = new THREE.Matrix4();
+                // position.set(
+                //     px, 0, 0, 0,
+                //     0, py, 0, 0,
+                //     0, 0, pz, 0,
+                //     0, 0, 0, 1);
+                //console.log("px = " + px + " py = " + py + " pz = " + pz);
+                // let rotation = new THREE.Matrix4();
+                // rotation.set(
+                //     cosA, -sinA, 0, 0,
+                //     sinA, cosA, 0,. 0,
+                //     0, 0, 1, 0,
+                //     0, 0, 0, 1);
+
+                //     let final = new THREE.Matrix4();
+
+                //     final.multiplyMatrices(translation, rotation);
+                //     final.multiply(mTranslation);
+                //    final.multiply(position);
+
+                //        console.log("pitch = " + toDeg(this.getPitch()) + " roll = " + toDeg(this.getRoll()), " yaw = " + this.getYaw());
+
+                //    let v = new THREE.Vector3(px + tx, pz + tz, -py - ty);
+
+                this.setX(dx);
+                this.setY(dy);
+                this.setZ(dz);
+                //    this.ship.position.copy(v);
+
+                // this.setY(this.getY() + dy);
+                // this.setX(this.getX() * cosB + this.getZ() * -sinB + (px + dx) - px * cosB + pz * sinB);
+                // this.setZ(this.getX() * sinB + this.getZ() * cosB + (pz + dz) - pz * cosB - px * sinB);
+
+
+                if (this.getPitch() !== 0) {
+                    let diff = this.getPitch();
+
+                    this.ship.rotation.x -= (diff * delta);
                 }
 
-                if (this.sprite.rotation.x !== 0) {
-                    let diff = this.sprite.rotation.x;
+                if (this.ship.rotation.y !== 0) {
+                    let diff = this.ship.rotation.y;
 
-                    this.sprite.rotation.x -= (diff * delta);
+                    this.ship.rotation.y -= (diff * delta);
                 }
 
-                let camDiff = (camera.position.z - this.getZ() - this.cameraOffset.z);
+                // let camDiff = (camera.position.z - this.getZ() - this.cameraOffset.z);
 
-                let translate = camDiff * delta;// + this.velocity.z * cosB + this.velocity.z * sinB;
-                //     camera.position.z -= (translate);//this.getZ() + this.cameraOffset;
+                // let translate = camDiff * delta;// + this.velocity.z * cosB + this.velocity.z * sinB;
 
-
-                let fx = -(camera.position.x - this.getX() - this.cameraOffset.x) * delta;
-                let fz = -(camera.position.z - this.getZ() - this.cameraOffset.z) * delta;
-                let xx = camera.position.x;
-                let zz = camera.position.z;
-
-                let ddx = (camera.position.x - this.getX());
-                let ddz = (camera.position.z - this.getZ());
-                //   sinB = Math.sin(Math.atan2(ddz, ddx));
-                //    cosB = Math.cos(Math.atan2(ddz, ddx));          
-                let xfx = xx * cosB + zz * -sinB + (ddx + fx) - (ddx) * cosB + (ddz) * sinB;
-                let zfz = xx * sinB + zz * cosB + (ddz + fz) - (ddz) * cosB - (ddx) * sinB;
 
                 camera.position.z -= (camera.position.z - this.getZ() - this.cameraOffset.z) * delta + this.velocity.z * cosB;
                 camera.position.y -= (camera.position.y - this.getY() - this.cameraOffset.y) * delta;
                 camera.position.x -= (camera.position.x - this.getX() - this.cameraOffset.x) * delta;
 
                 light.position.z = camera.position.z + 2;
-                //      light.lookAt(0,0,this.getZ() - 10);
-
-                //           camera.position.copy(pos);
-                //     camera.lookAt(look);
-                // look.applyQuaternion(this.ship.target.Rotation);
 
 
+                distanceZ = this.getZ();
             }
             getMesh() {
-                return this.sprite;
+                //  return this.sprite;
+                return this.ship;
             }
         }
-
+        var delta = 0;
 
 
         function initTHREEJS() {
@@ -511,6 +960,9 @@
                 this.t1.to(this.mesh.rotation, 0.5, { z: Math.PI * 0.5, ease: Expo.easeOut });
             }
         }
+        //     document.getElementsByTagName('body')[0].onKeyDown = (e)=>{
+        //    //     ship.handleKeyEvent(e.which, scene);
+        //     };
         $(document.body).on('keydown', function (e) {
 
             ship.handleKeyEvent(e.which, scene);
@@ -522,6 +974,8 @@
             y: 5,
             z: 1000,
         };
+
+        var distanceZ = 0;
 
         const geometry = new THREE.CylinderGeometry(2, 2, 1000, 48, 48, true, 0, 2 * Math.PI);
         const material = new THREE.MeshLambertMaterial({ color: 0x2F2F00, wireframe: true });
@@ -551,14 +1005,37 @@
             return angle * 180 / Math.PI;
         }
 
-
-
         const ship = new Ship();
+        const sams = [];
+        var lastDistanceZ = 160;
+        function addSAMtoScene() {
+            if ((lastDistanceZ - ship.getZ()) > 60) {
+                console.log("Interval fired " + (25 * ship.velocity.z) + " shiP : " + ship.getZ());
+                const sss = new SAMLauncher(0, 0);
+                let x = -PLAIN_DIMEN.x / 2 + sss.dim.x / 2 + Math.random() * (PLAIN_DIMEN.x - sss.dim.x);
+                sss.setX(x);
+                sss.setZ(ship.getZ() - 100);
+                scene.add(sss.getMesh());
+                sss.addMissiles(scene);
+                sams.push(sss);
+                lastDistanceZ = distanceZ;
+            } else {
+                console.log("Interval Rejected: " + (lastDistanceZ - ship.getZ()));
 
+            }
+        }
+
+
+        window.setInterval(addSAMtoScene, 2000);
+
+        ship.setY(2);
+        ship.setZ(25);
+              ship.setX(3);
         const sam = new SAMLauncher(0, 0);
+        // sam.setZ(-2);
 
         //    ship.yaw(toRad(5));
-        light.target = ship.getMesh();
+       light.target = ship.getMesh();
         const helper = new THREE.CameraHelper(light.shadow.camera);
 
         scene.add(camera);
@@ -566,10 +1043,11 @@
         scene.add(plane);
 
         scene.add(light);
-        scene.add(helper);
+        // scene.add(helper);
         scene.add(ship.getMesh());
         scene.add(sam.getMesh());
-        //   const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        sam.addMissiles(scene);
+        // const controls = new THREE.OrbitControls(camera, renderer.domElement);
         var number = 45;
 
         const clock = new THREE.Clock();
@@ -588,7 +1066,7 @@
 
         var repeatMe = function () {
             number++;
-
+            delta = clock.getDelta();
             requestAnimationFrame(repeatMe);
 
 
@@ -599,12 +1077,20 @@
 
             //        clock.getDelta();
             //        time = clock.elapsedTime;
-            //     ship.move(camera, light)
-
-            //  controls.update();
+            // ship.getMesh().rotation.z += toRad(1);
+            //console.log("Location: " + location);
+                ship.move(camera, light)
+            //          location = ship.getZ();
+            // controls.update();
             //           sam.getMesh().rotation.y += toRad(0.5);
             angle += toRad(0.5);
-            sam.rotateY(angle);
+            // ship.yaw(toRad(1));
+            // sam.rotateY(move);
+            sam.move();
+
+            sams.forEach((s) => {
+                s.move();
+            });
 
             renderer.render(scene, camera);
 
