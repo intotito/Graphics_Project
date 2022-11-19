@@ -19,6 +19,7 @@
 
     <script type="text/javascript">
         const MISSILE_VELOCITY = 0.35;
+        const SHIP_VELOCITY = 0.1;
         const GRAVITY = -0.001;
         const CANNON_VELOCITY = 1;
         class SAMLauncher {
@@ -247,7 +248,7 @@
                 let t1 = -(v / g) + (Math.sqrt(v * v + 2 * g * y)) / g;
                 let t2 = -(v / g) - (Math.sqrt(v * v + 2 * g * y)) / g;
 
-                let range1 = vx * t1;
+                let range1 = vx * t1; // Hit 
                 let range2 = vx * t2;
 
 
@@ -281,11 +282,6 @@
                 } else if (this.state === this.RETRACTING) {
                     this.retracting();
                 } else if (this.state == this.READY) {
-
-
-
-
-
 
 
                     if (ship.getZ() < checkMark) {
@@ -652,7 +648,7 @@ Target Angle (X): ${toDeg(this.target_Angle)} Current Angle (Y): ${toDeg(this.ve
                 y: 1,
                 z: 3
             };
-            MAX_VELOCITY = 0.1;
+            MAX_VELOCITY = SHIP_VELOCITY;
             velocity = {
                 x: 0,
                 y: 0,
@@ -1152,7 +1148,7 @@ Target Angle (X): ${toDeg(this.target_Angle)} Current Angle (Y): ${toDeg(this.ve
             number++;
             delta = clock.getDelta();
             requestAnimationFrame(repeatMe);
-camera.lookAt(ship.getX(), ship.getY(), ship.getZ());
+            camera.lookAt(ship.getX(), ship.getY(), ship.getZ());
 
 
             //     camera.position.y = ball.getY() + .2;// + 0.2;// + 1;

@@ -13,28 +13,296 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.5/dat.gui.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.2/TweenMax.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
-    <!-- <script src="OrbitControls.js"></script> -->
-
+    <script src="OrbitControls.js"></script>
+    <!-- <canvas id="canvas" height="750" width="750" style="background-color: red;"></canvas> -->
     <script type="text/javascript">
+
+        var toRad = (degree) => {
+            return (degree % 360) * Math.PI / 180;
+        }
+
+        var toDeg = (radian) => {
+            return 360 * radian / (2 * Math.PI);
+        }
+
+/* 
+        var canvas = document.getElementById("canvas");
+        var ctx = canvas.getContext("2d");
+
+        const P1 = { x: 70, y: 500 }
+        const P2 = { x: 500, y: 100 }
+
+        const dx = P2.x - P1.x;
+        const dy = P2.y - P1.y;
+        const d = Math.sqrt(dx * dx + dy * dy);
+
+        const m = Math.asin(dy / d);
+        const w = Math.PI / 2 - m;
+        const theta = toRad(35);
+        const a = (Math.PI - theta) / 2;
+        const Q = Math.PI - a - w;
+        const R = (Math.PI / 2 - Q);
+
+        const r = (d / 2) / Math.cos(a);
+        const h0 = r * Math.sin(R);
+        const w0 = r * Math.cos(R);
+
+        ctx.beginPath();
+        ctx.fillStyle = 'red';
+        ctx.strokeStyle = 'black';
+        ctx.arc(P1.x, P1.y, 5, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(P2.x, P2.y, 5, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        var truth = P2.y < P1.y;
+        if (truth)
+            ctx.arc(P2.x - w0, P2.y + h0, r, 0, 2 * Math.PI);
+        else
+            ctx.arc(P1.x + w0, P1.y - h0, r, 0, 2 * Math.PI);
+        //  ctx.fill();
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(P2.x, P2.y);
+        ctx.rotate(-(R - Math.PI / 2));
+        ctx.beginPath();
+
+        ctx.translate(-P2.x, -P2.y);
+        ctx.rect(P2.x - 20 / 2, P2.y - 5, 20, 10);
+        ctx.stroke();
+        ctx.restore();
+
+
+ */
+
+
+
+
+
+        function initTHREEJS() {
+            let scene = new THREE.Scene();
+
+            let camera = new THREE.PerspectiveCamera(
+                75, // field of view
+                window.innerWidth / window.innerHeight, // aspect ratio
+                0.1, // inner view
+                5000 // outer view
+            );
+            camera.position.z = 850;
+            camera.position.y = 750;
+            camera.position.x = 850;
+
+            let light = new THREE.SpotLight(
+                0xFFFFFF// color
+                , 1 // intensity
+                , 10000 // position
+            );
+            const light1 = new THREE.HemisphereLight(0xffffbb, 0x080820, 1000);
+            light.castShadow = true;
+            light.position.set(0, 750, 0);
+
+            let renderer = new THREE.WebGLRenderer(
+                { antialias: true }
+            );
+            renderer.setClearColor('#E5E5E5');
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            //       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            document.body.appendChild(renderer.domElement);
+            window.addEventListener('resize', () => {
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+            });
+            let mouse = new THREE.Vector2();
+            return {
+                scene: scene,
+                camera: camera,
+                renderer: renderer,
+                light: light,
+            };
+        }
+
+        const { scene, camera, renderer, light } = initTHREEJS();
+        function onMouseClick(event) {
+
+        }
+
+        // Represents the size of the plane
+        const PLAIN_DIMEN = {
+            x: 750,
+            y: 750,
+            z: 750,
+        };
+
+
+        const plane = new THREE.Mesh(
+            new THREE.BoxGeometry(PLAIN_DIMEN.x, 100, PLAIN_DIMEN.z),
+            new THREE.MeshPhongMaterial({ color: 0xFF0000, shininess: 0, specular: 0x111111 })
+        );
+        plane.castShadow = true;
+        plane.receiveShadow = true;
+        plane.position.y = -100 / 2;
+        const box = new THREE.Mesh(
+            new THREE.BoxGeometry(PLAIN_DIMEN.x, PLAIN_DIMEN.y, PLAIN_DIMEN.z),
+            new THREE.MeshPhongMaterial({ color: 0x00FF00, transparent: true, opacity: 0.25 })
+        );
+        box.position.y = PLAIN_DIMEN.y / 2;
+
+
+
+
+
+        const helper = new THREE.CameraHelper(light.shadow.camera);
+
+        scene.add(camera);
+
+        scene.add(plane);
+     //   scene.add(box);
+        scene.add(light);
+        //  scene.add(helper);
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         var number = 45;
-
+        // Clock for time keeping
         const clock = new THREE.Clock();
+
+        // Camera offset away from the ball
         var cameraOffset = {
             x: 1.7,
             y: 0.7,
             z: 1.7
         }
         var time = 0;
-        const duration = Number.MAX_VALUE - Number.MAX_VALUE + 1.2; // 2 seconds maneurverA
-        var angle = 0;
+        const duration = 0.5; // duration of camera adjustement maneurver
+        // Time to start maneurver
+
+        var count = 0;
+        var delta = 0;
+
+        /**
+         * This method performs the camera adjustment maneuver by rotating and going behind the ball
+         */
+        function positionCamera() {
+            /* let phi = Math.atan2(target.velocity.z, target.velocity.x);
+            let tetha = Math.atan2(target.source.z - target.ball.z, target.source.x - target.ball.x);
+            let ang1 = -theta - Math.PI - phi;
+            let ang2 = 2 * Math.PI - Math.abs(ang1);
+            let ang = Math.abs(ang1) < Math.abs(ang2) ? ang1 : ang2;
+            let x = target.source.x;
+            let z = target.source.z;
+            let progress = (time - markedTime.x) / duration;
+            let angle = progress * ang;
+            let cosB = Math.cos(angle);
+            let sinB = Math.sin(angle);
+            camera.position.x = x * cosB - z * sinB + target.ball.x * (1 - cosB) + target.ball.z * sinB;
+            camera.position.z = x * sinB + z * cosB + target.ball.z * (1 - cosB) - target.ball.x * sinB; */
+
+        }
+
+        /**
+         * The repeatme function that is called for every frames
+         */
+  //      function foo() {
+       
+
+            const p1 = { x: 300, z: 80 }
+            const p2 = { x: -370, z: 362 }
+
+            const dx = p2.x - p1.x;
+            const dz = p2.z - p1.z;
+            const d = Math.sqrt(dx * dx + dz * dz);
+
+            const m = Math.asin(dz / d);
+            const w = Math.PI / 2 - m;
+            const theta = toRad(15);
+            const a = (Math.PI - theta) / 2;
+            const Q = Math.PI - a - w;
+            const R = (Math.PI / 2 - Q);
+
+            const r = (d / 2) / Math.cos(a);
+            const h0 = r * Math.sin(R);
+            const w0 = r * Math.cos(R);
+
+            const width = 20, breadth = 8, height = 4;
 
 
+            const path = new THREE.Mesh(
+                new THREE.CylinderGeometry(r, r, height / 2, 64),
+                new THREE.MeshPhongMaterial({ color: 0x0000FF, shininess: 0, specular: 0x111111, transparent: true, opacity: 0.5 })
+            );
+            var truth = p2.x > p1.x;
+            if (truth) {
+            //    ctx.arc(p2.x - w0, p2.y + h0, r, 0, 2 * Math.PI);
+                path.position.x = p2.x + w0;
+                path.position.z = p2.z + h0;
+            }
+            else {
+              //  ctx.arc(p1.x + w0, p1.y - h0, r, 0, 2 * Math.PI);
+              path.position.x = (p1.x - w0);
+              path.position.z = p1.z - h0;
+            }
+
+            // const target = new THREE.MeshBasicMaterial(new THREE.BoxGeometry(100, 100, 100),  
+            // new THREE.MeshPhongMaterial({ color: 0x00FF00, shininess: 0, specular: 0x111111 }));
+
+            const angV = Math.PI * 2 / 300;
 
 
+            
+            const missile = new THREE.Mesh(
+                new THREE.BoxGeometry(width, height, breadth),
+                new THREE.MeshPhongMaterial({ color: 0x00FF00, shininess: 0, specular: 0x111111 })
+            );
 
+            missile.position.x = p1.x;
+            missile.position.z = p1.z;
+           
 
+            const ship = new THREE.Mesh(
+                new THREE.BoxGeometry(width, height, width),
+                new THREE.MeshPhongMaterial({ color: 0x00FF00, shininess: 0, specular: 0x111111 })
+            )
 
+            ship.position.x = p2.x;
+            ship.position.z = p2.z;
+            scene.add(ship);
+            scene.add(missile);
+            scene.add(path);
+
+            console.log("O(x,z): (" + path.position.x + ", " + path.position.z + ")");
+            console.log("M x: " + missile.position.x + " z: " + missile.position.z);
+            console.log("r: " + r + " R: " + toDeg(R));
+
+            const angg1 = Math.asin((missile.position.x - path.position.x) / r);
+            const angg2 = Math.acos((missile.position.z - path.position.z) / r);
+            missile.rotation.y = angg1;//-(R - Math.PI / 2);
+            console.log("Sin A: " + toDeg(angg1) + " Cos A: " + toDeg(angg2));
+    //    }
+
+    //    foo();
+var angle = 0;
+        var repeatMe = function () {
+          angle += angV;
+            number++;
+            delta = clock.getDelta();
+            time = clock.elapsedTime;
+            requestAnimationFrame(repeatMe);
+            controls.update();
+            renderer.render(scene, camera);
+            
+            missile.position.x = path.position.x + r * Math.cos(angg1 + angle);
+            missile.position.z = path.position.z + r * Math.sin(angg1 + angle);
+            missile.rotation.y = angg1 - angle;
+        }
+        repeatMe();
+        var count = 0;
+        var increasing = true;
 
 
 
@@ -42,6 +310,7 @@
 
 
     </script>
+
 </body>
 
 </html>
