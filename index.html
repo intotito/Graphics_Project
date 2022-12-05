@@ -18,11 +18,47 @@
     <!-- <script src="OrbitControls.js"></script> -->
 
     <script type="text/javascript">
-        const MISSILE_VELOCITY = 0.35;
+        const MISSILE_VELOCITY = 0.51;
         const SHIP_VELOCITY = 0.1;
         const GRAVITY = -0.001;
         const CANNON_VELOCITY = 1;
         class SAMLauncher {
+            TELEMENTRIES = [
+                {
+                    INDEX: 1, // Determines if target is hit during boost or re-entry  0 - Boost phase, 1 - Re-entry phase
+                    route: 1, // Determines if terget is hit from east or west
+                    attackAngle: toRad(15), // Attack angle along the route
+                    engageAngle: toRad(25) // Attack angle of the missile
+                },
+                {
+                    INDEX: 1, // Determines if target is hit during boost or re-entry  0 - Boost phase, 1 - Re-entry phase
+                    route: 0, // Determines if terget is hit from east or west
+                    attackAngle: toRad(15), // Attack angle along the route
+                    engageAngle: toRad(20) // Attack angle of the missile
+                },
+                {
+                    INDEX: 0, // Determines if target is hit during boost or re-entry  0 - Boost phase, 1 - Re-entry phase
+                    route: 0, // Determines if terget is hit from east or west
+                    attackAngle: toRad(5), // Attack angle along the route
+                    engageAngle: toRad(20) // Attack angle of the missile
+                },
+                {
+                    INDEX: 0, // Determines if target is hit during boost or re-entry  0 - Boost phase, 1 - Re-entry phase
+                    route: 1, // Determines if terget is hit from east or west
+                    attackAngle: toRad(2.5), // Attack angle along the route
+                    engageAngle: toRad(45) // Attack angle of the missile
+                },
+                {
+                    INDEX: 0, // Determines if target is hit during boost or re-entry  0 - Boost phase, 1 - Re-entry phase
+                    route: 1, // Determines if terget is hit from east or west
+                    attackAngle: toRad(2.5), // Attack angle along the route
+                    engageAngle: toRad(25) // Attack angle of the missile
+                }
+            ];
+
+
+
+            attackAngle = toRad(4); // change here ** Describes the radius of the circular path the missile takes to its target
             count = 0;
             angle = 0;
             missiles = [];
@@ -60,7 +96,7 @@
             }
             setX(x) {
                 this.SAM.position.x = x;
-                for (let i = 0; i < 4; i++) {
+                for (let i = 0; i < this.missiles.length; i++) {
                     if (i >= this.count) {
                         this.missiles[i].getMesh().position.x = x;
                         //unfired move
@@ -93,7 +129,7 @@
                 }
             }
             constructor(x, z) {
-                this.engageAngle = toRad(40);
+                this.engageAngle = toRad(45); // change here
                 this.state = 0;
                 this.dim.x *= this.scale.x;
                 this.dim.y *= this.scale.y;
@@ -234,13 +270,12 @@
 
             move() {
 
-                /*
-                                * *****************************************
-                                * At thee highest point in the trajectory
-                                */
+                let telementry = this.TELEMENTRIES[this.count];
+
+
                 let ymax = ship.getY();
                 let theta = Math.asin((2 * ymax * -GRAVITY) / MISSILE_VELOCITY);
-                let aaa = this.engageAngle;
+                let aaa = telementry.engageAngle;//  this.engageAngle;
                 let v = MISSILE_VELOCITY * Math.sin(aaa);
                 let vx = MISSILE_VELOCITY * Math.cos(aaa);
                 let g = GRAVITY;
@@ -252,47 +287,69 @@
                 let range2 = vx * t2;
 
 
-                let shipBackoff = t2 * 0.1;//-ship.velocity.z;
-                console.log("TTest", "Time t1: " + t1 + " Time t2: " + t2 + " Distance1: " + (vx * t1) + " Distance2: " + (vx * t2) + " aaa " + this.engageAngle);
+                let INDEX = telementry.INDEX; // WHETHER TO ATTACK 0 - AT BOOST, 1 - RE-ENTRY PHASE
 
-                console.log("TTest", " Shoot when ship.z = " + (shipBackoff), " Away from target");
 
-                let diff = ship.getZ() - range2;
-                let timeToGetThere = diff / -ship.velocity.z
 
-                let checkMark = this.getZ() + range2 + shipBackoff;
-                console.log("WTest", "Cechmark === " + checkMark + " ship " + ship.getZ());
-                /*
-                * *****************************************
-                */
+                let TIME = [
+                    -(v / g) + (Math.sqrt(v * v + 2 * g * y)) / g,
+                    -(v / g) - (Math.sqrt(v * v + 2 * g * y)) / g
+                ];
+                let RANGE = [
+                    vx * TIME[0],
+                    vx * TIME[1]
+                ];
+                let BACK_OFF = [
+                    TIME[0] * SHIP_VELOCITY,
+                    TIME[1] * SHIP_VELOCITY
+                ];
+                let DIFFERENCE = [
+                    ship.getZ() - RANGE[0],
+                    ship.getZ() - RANGE[1]
+                ];
 
+                let shipBackoff = t1 * SHIP_VELOCITY;//-ship.velocity.z; ********** should multiply by orientation of ship
+
+                let TIME_TO_TARGET = DIFFERENCE[INDEX] / -ship.velocity.z;
+
+
+                let CHECK_MARK = this.getZ() + RANGE[INDEX] + BACK_OFF[INDEX];
+
+                
+                let target = {
+                    attackAngle: telementry.attackAngle,//  this.attackAngle, // don't change here
+                    route: telementry.route, // Circular route the missile will take
+                    x: ship.getX(),
+                    y: ymax,
+                    z: this.getZ() + RANGE[INDEX], //range1,
+                    angularVelocity: telementry.attackAngle / TIME[INDEX], //t1,
+                    range: RANGE,//[range1, range2],
+                    time: TIME //[t1, t2]     
+                }
+                //console.log(target)
 
                 let difference = Math.sqrt((ship.getY() - this.SAM.position.y) ** 2 + (ship.getZ() - this.SAM.position.z) ** 2);
-                console.log("Difference: " + difference);
+
                 if (this.state === this.IDLE && this.count < 4) {
 
 
-                    if (ship.getZ() < (checkMark + 10)) {
-                        console.log("Engage: Start engagin");
+                    if (ship.getZ() < (CHECK_MARK + 10)) {
+
                         this.engage();
                     }
-                } else if (this.state === this.ENGAGING) {
-                    console.log("SAM: Engaging target");
+                } else if (this.state === this.ENGAGING && this.count < 4) {
+
                     this.engaging();
                 } else if (this.state === this.RETRACTING) {
                     this.retracting();
-                } else if (this.state == this.READY) {
+                } else if (this.state == this.READY && this.count < 4) {
 
 
-                    if (ship.getZ() < checkMark) {
-                        this.fire();
-                        console.log("Firing: Missile fired");
-                        if (this.count < 4) {
-                            this.state = this.WAITING;
-                            window.setTimeout(() => {
-                                this.engage();
-                            }, 1200);
-                        }
+                    if (ship.getZ() < CHECK_MARK) {
+                        console.log("TTest", " Shoot when ->", "CheckMark: ", CHECK_MARK.toFixed(2), "Ship Location: ", ship.getZ().toFixed(2),
+                    "Ship Ceiling: ", ship.getY().toFixed(2), "Ship Orientation: ", toDeg(ship.getMesh().rotation.y).toFixed(2), target, "Angle: ", toDeg(this.missiles[this.count].vehicle.rotation.x));
+                        this.fire(target);
+                        
                     }
                 }
 
@@ -303,17 +360,13 @@
 
             }
 
-            fire() {
-
-
-
+            fire(target) {
 
                 if (this.count < 4) {
                     // console.log("Did i fire?");
-                    this.missiles[this.count].fire();
-                    { // TEST TEST TEST TEST TEST TEST TEST TEST TEST 
-                        this.count = 4;
-                        this.status = RETRACTING;
+                    this.missiles[this.count].fire(target);
+                    if (this.count !== 3) {
+                       this.state = this.IDLE;
                     }
                 }
                 if (this.count == 3) {
@@ -323,13 +376,9 @@
             }
 
             engage() {
-                let dy = ship.getY() - this.getY();
+ /*                let dy = ship.getY() - this.getY();
                 let dx = ship.getX() - this.getX();
                 let dz = ship.getZ() - this.getZ();
-
-
-
-
 
                 // this.engageAngle = Math.atan2(dy, dz) * 5;
 
@@ -337,26 +386,35 @@
                 let theta = Math.asin(Math.sqrt(2 * ymax * -GRAVITY) / MISSILE_VELOCITY);
 
 
-
-
-
-
-
-
-
-
                 console.log("Test", " theta: " + toDeg(theta) + " Ship y: " + ymax + " EngageAngle " + toDeg(this.engageAngle));
-                // this.engageAngle = theta;
-                // this.engageAngle = toRad(45);
 
-                if (toDeg(this.engageAngle) > 45) {
-                    //        this.engageAngle /= 1.15;
+                console.log("EngageX at: " + toDeg(Math.atan2(dy, dz))) */
+                if (this.count > 0) {
+                    if (this.TELEMENTRIES[this.count].engageAngle > this.TELEMENTRIES[this.count - 1].engageAngle) {
+                        this.shift = 1;
+                    } else {
+                        this.shift = -1;
+                    }
                 }
-                console.log("EngageX at: " + toDeg(Math.atan2(dy, dz)))
-
                 this.state = this.ENGAGING;
             }
+            magic() {
+                // this.engageAngle = toRad(20);
+                // this.shift = -1;
+                this.count++;
+                if (this.TELEMENTRIES[this.count].engageAngle > this.TELEMENTRIES[this.count - 1].engageAngle) {
+                    this.shift = 1;
+                } else {
+                    this.shift = -1;
+                }
+                this.engage();
 
+                console.log("Magic", " count: ", this.count, " Shift: ", this.shift);
+                this.engage();
+                if (this.count == 3) {
+                    this.state = this.RETRACTING;
+                }
+            }
             retracting() {
                 if (toDeg(this.angle) < 0) {
                     this.angle += toRad(.1);
@@ -368,16 +426,24 @@
                     this.state = this.IDLE;
                 }
             }
-
+            shift = 1;
             engaging() {
-                console.log("Engaging at" + toDeg(this.engageAngle));
-                if (toDeg(this.angle) > -toDeg(this.engageAngle)) {
-                    this.angle -= toRad(1);
-                    this.mesh3.rotateX(toRad(-1));
-                    this.missiles.forEach((m) => {
-                        m.getMesh().rotation.x += toRad(-1);
-                    });
+                let telementry = this.TELEMENTRIES[this.count];
+                //           let shift = 1; // 1 - increasing, -1 - decreasing
+                console.log("Engaging at" + toDeg(telementry.engageAngle), "this.angle: ", toDeg(this.angle).toFixed(2));
+                console.log("Engaging", "(", toDeg(this.angle).toFixed(0), " * ", this.shift, ") > -(", toDeg(telementry.engageAngle), " * ", this.shift, ")");
+                if ((this.angle * this.shift) > -(telementry.engageAngle * this.shift)) {
+
+                    this.angle -= toRad(this.shift/4);
+                    this.mesh3.rotateX(toRad(-this.shift/4));
+                    for(let i = 0; i < this.missiles.length; i++){
+                        if(i >= this.count){
+                            console.log("TTest", this.angle);
+                            this.missiles[i].getMesh().rotation.x = this.angle;//+= toRad(-this.shift/4);
+                        }
+                    }
                 } else {
+                    this.missiles[this.count].getMesh().rotation.x = -Number(this.TELEMENTRIES[this.count].engageAngle);
                     this.state = this.READY;
                 }
             }
@@ -466,12 +532,27 @@
         }
 
         class Missile {
+            target = {
+                x: 0,
+                y: 0,
+                z: 0,
+                route: 0
+            };
             IDLE = 0;
             FLYIING = 1;
             EXPLODING = 2;
             state = this.IDLE;
             target_Angle = 0;
             timer = new THREE.Clock();
+            radius = 0;
+
+            gainAngle = 0;
+            angVel = 0;
+            angR = 0;
+            center = {
+                x: 0,
+                z: 0
+            }
 
             velocity = {
                 x: 0,
@@ -540,7 +621,55 @@
             getMesh() {
                 return this.vehicle;
             }
-            fire() {
+            fire(target) {
+                this.target = target;
+                let p1 = { x: this.getX(), z: this.getZ() }
+                let p2 = { x: target.x, z: target.z }
+                console.log(p1)
+                console.log(p2)
+
+                let dxx = p2.x - p1.x;
+                let dzz = p2.z - p1.z;
+                let d = Math.sqrt(dxx * dxx + dzz * dzz);
+
+                let m = Math.asin(dzz / d);
+                let w = Math.PI / 2 - m;
+                let theta = target.attackAngle;
+                let a = (Math.PI - theta) / 2;
+                let Q = Math.PI - a - w;
+                let R = (Math.PI / 2 - Q);
+
+                let r = (d / 2) / Math.cos(a);
+                let h0 = r * Math.sin(R);
+                let w0 = r * Math.cos(R);
+                console.log("R = " + toDeg(R) + " h0 = " + h0 + " w0 = " + w0);
+                //     let truth = p2.x > p1.x;
+                if (target.route === 1) {
+                    this.center.x = p2.x + w0;
+                    this.center.z = p2.z + h0;
+                    R = Math.PI + R;
+                }
+                else if (target.route === 0) {
+                    this.center.x = (p1.x - w0);
+                    this.center.z = p1.z - h0;
+                }
+
+                //            let angV = Math.PI * 2 / 300;
+                let angg1 = (Math.PI / 2 - R);
+                this.angR = R;//-(R - Math.PI / 2);
+                this.radius = r;
+                this.angVel = target.angularVelocity;
+                console.log("O(x,z): (" + this.center.x + ", " + this.center.z + ")");
+
+                console.log("angg1 = " + toDeg(angg1) + "tilt = " + toDeg(this.angR) + " Radius = " + this.radius + " angvel = " + toDeg(target.angularVelocity));
+
+
+
+
+
+
+
+
 
                 let dy = ship.getY() - this.getY();
                 let dx = ship.getX() - this.getX();
@@ -550,9 +679,9 @@
                     this.target_Angle = toDeg(30);
                 }
                 this.timer.getDelta();
-                console.log("MTEST", `Missile Fired x: ${this.getX()} y: ${this.getY()} z: ${this.getZ()}
-Target Angle (X): ${toDeg(this.target_Angle)} Current Angle (Y): ${toDeg(this.vehicle.rotation.x)}`)
-                console.log("XXX --- " + toDeg(this.target_Angle));
+                //                 console.log("MTEST", `Missile Fired x: ${this.getX()} y: ${this.getY()} z: ${this.getZ()}
+                // Target Angle (X): ${toDeg(this.target_Angle)} Current Angle (Y): ${toDeg(this.vehicle.rotation.x)}`)
+                //                 console.log("XXX --- " + toDeg(this.target_Angle));
                 //          console.log("EngageX at: " + toDeg(Math.atan2(dy, dz)))
                 this.state = this.FLYIING;
                 // console.log("Check: " + toDeg(Math.PI / 2 + this.vehicle.rotation.x));
@@ -566,13 +695,6 @@ Target Angle (X): ${toDeg(this.target_Angle)} Current Angle (Y): ${toDeg(this.ve
                 // console.log("MissileFired");
             }
             move() {
-
-
-
-
-
-
-
                 if (this.state === this.IDLE) {
                     //         console.log("IDLE MISSILE");
                 } else if (this.state === this.FLYIING) {
@@ -594,24 +716,47 @@ Target Angle (X): ${toDeg(this.target_Angle)} Current Angle (Y): ${toDeg(this.ve
 
                     let angX = Math.atan2(vy, vz);
                     //                   let angY = Math.atan2(dx, dz);
-
+                    // console.log("angR: " + toDeg(this.angR))
                     let angY = this.target_Angle / (dz / (vz - ship.velocity.z));
-
-
+                    //        missile.position.x = path.position.x + r * Math.cos(angg1 + angle);
+                    let xx = 0, zz = 0;
+                    if (this.target.route === 1) {
+                        xx = this.center.x + this.radius * Math.cos(-this.angR + this.gainAngle);
+                        zz = this.center.z + this.radius * Math.sin(-this.angR + this.gainAngle);
+                    }
+                    else if (this.target.route === 0) {
+                        xx = this.center.x + this.radius * Math.cos(this.angR + this.gainAngle);
+                        zz = this.center.z + this.radius * Math.sin(this.angR + this.gainAngle);
+                    }
+                    //       missile.rotation.y = angg1 - angle;
+                    //  console.log("Recheck O(x,z): (" + this.center.x + ", " + this.center.z + ")");
+                    console.log(`Compare (xR - xL) - (${xx} - ${x}), (zR - zL) - (${zz} - ${z})`);
                     this.velocity.x = vx;
                     this.velocity.y = vy;
                     this.velocity.z = vz;
-                    this.setX(x);
+                    this.setX(xx);
                     this.setY(y);
                     this.setZ(z);
+                    console.log("Result", "z = " + this.getZ());
                     this.vehicle.rotation.x = -angX;
+                    if (this.target.route === 1) {
+                        this.vehicle.rotation.y = (this.angR - this.gainAngle);
+                    } else if (this.target.route === 0) {
+                        this.vehicle.rotation.y = - (this.angR + this.gainAngle);
+                    }
                     if (Math.abs(this.vehicle.rotation.y) < Math.abs(this.target_Angle)) {
-                        this.vehicle.rotation.y += angY;
+                        //               this.vehicle.rotation.y += angY;
                     }
                     if (y <= 0) {
-                        console.log("MTest", ` Missile landed x: ${this.getX()} y: ${this.getY()} z: ${this.getZ()}
-Target Angle (X): ${toDeg(this.target_Angle)} Current Angle (Y): ${toDeg(this.vehicle.rotation.x)} Time of Flight: ${this.timer.getElapsedTime().toFixed(2)}`);
+                        //                          console.log("MTest", ` Missile landed x: ${this.getX()} y: ${this.getY()} z: ${this.getZ()}
+                        // Target Angle (X): ${toDeg(this.target_Angle)} Current Angle (Y): ${toDeg(this.vehicle.rotation.x)} Time of Flight: ${this.timer.getElapsedTime().toFixed(2)}`);
+                        console.log("Result", " xx = " + xx + " VS x = " + x + " ||| zz = " + zz + " VS z = " + z + " dz = " + (zz - z) + " Angle: " + toDeg(this.gainAngle));
                         this.state = this.EXPLODING;
+                    }
+                    if (this.target.route == 1) {
+                        this.gainAngle -= this.angVel;
+                    } else if (this.target.route == 0) {
+                        this.gainAngle += this.angVel;
                     }
                     // console.log("RRR: " + toDeg(this.vehicle.rotation.y));
                 } else if (this.state === this.EXPLODING) {
@@ -810,7 +955,7 @@ Target Angle (X): ${toDeg(this.target_Angle)} Current Angle (Y): ${toDeg(this.ve
                 } else if (code == this.LEFT) {
                     this.ship.rotation.y += toRad(-5);
                     this.ship.rotation.z += toRad(2);
-
+                    sam.magic();
 
                 } else if (code == this.DOWN) {
                     this.ship.rotation.x += toRad(1);
@@ -952,9 +1097,10 @@ Target Angle (X): ${toDeg(this.target_Angle)} Current Angle (Y): ${toDeg(this.ve
                 // let translate = camDiff * delta;// + this.velocity.z * cosB + this.velocity.z * sinB;
 
 
-                camera.position.z = this.getZ() + 0;//-= (camera.position.z - this.getZ() - this.cameraOffset.z) * delta + this.velocity.z * cosB;
+                camera.position.z = this.getZ() + 5;//-= (camera.position.z - this.getZ() - this.cameraOffset.z) * delta + this.velocity.z * cosB;
                 camera.position.y = this.getY() + 1;// -= (camera.position.y - this.getY() - this.cameraOffset.y) * delta;
-                camera.position.x = this.getX() - 20;// -= (camera.position.x - this.getX() - this.cameraOffset.x) * delta;
+                camera.position.x = this.getX() - 0;// -= (camera.position.x - this.getX() - this.cameraOffset.x) * delta;
+
 
                 light.position.z = camera.position.z + 2;
 
@@ -1105,11 +1251,11 @@ Target Angle (X): ${toDeg(this.target_Angle)} Current Angle (Y): ${toDeg(this.ve
 
         //          window.setInterval(addSAMtoScene, 2000);
 
-        ship.setY(2.5);
-        ship.setZ(190 + 10);
+        ship.setY(10.5);
+        ship.setZ(250 + 10);
 
-        camera.position.z = 124;
-        camera.position.x = 0;
+        camera.position.z = 1;
+        camera.position.x = -2;
         ship.setX(0);
         const sam = new SAMLauncher(0, 0);
         // sam.setZ(-2);
@@ -1119,7 +1265,7 @@ Target Angle (X): ${toDeg(this.target_Angle)} Current Angle (Y): ${toDeg(this.ve
         const helper = new THREE.CameraHelper(light.shadow.camera);
 
         scene.add(camera);
-        scene.add(cylinder);
+   //     scene.add(cylinder);
         scene.add(plane);
 
         scene.add(light);
