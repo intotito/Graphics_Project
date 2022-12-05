@@ -19,10 +19,10 @@
 
     <script type="text/javascript">
         const MISSILE_VELOCITY = 0.51;
-        const SHIP_VELOCITY = 0.1;
+        const SHIP_VELOCITY = 0.2;
         const GRAVITY = -0.001;
         const CANNON_VELOCITY = 1;
-        class SAMLauncher {
+    class SAMLauncher {
             TELEMENTRIES = [
                 {
                     INDEX: 1, // Determines if target is hit during boost or re-entry  0 - Boost phase, 1 - Re-entry phase
@@ -333,7 +333,7 @@
                 if (this.state === this.IDLE && this.count < 4) {
 
 
-                    if (ship.getZ() < (CHECK_MARK + 10)) {
+                    if (ship.getZ() < (CHECK_MARK + 50)) {
 
                         this.engage();
                     }
@@ -379,15 +379,10 @@
  /*                let dy = ship.getY() - this.getY();
                 let dx = ship.getX() - this.getX();
                 let dz = ship.getZ() - this.getZ();
-
                 // this.engageAngle = Math.atan2(dy, dz) * 5;
-
                 let ymax = ship.getY();
                 let theta = Math.asin(Math.sqrt(2 * ymax * -GRAVITY) / MISSILE_VELOCITY);
-
-
                 console.log("Test", " theta: " + toDeg(theta) + " Ship y: " + ymax + " EngageAngle " + toDeg(this.engageAngle));
-
                 console.log("EngageX at: " + toDeg(Math.atan2(dy, dz))) */
                 if (this.count > 0) {
                     if (this.TELEMENTRIES[this.count].engageAngle > this.TELEMENTRIES[this.count - 1].engageAngle) {
@@ -448,7 +443,6 @@
                 }
             }
         }
-
         class Cannon {
             RELEASE_VELOCITY = 1;
             velocity = {
@@ -947,15 +941,15 @@
             handleKeyEvent(code, scene) {
                 // console.log("Key pressed working!!");
                 if (code == this.RIGHT) {
-                    this.ship.rotation.y += toRad(5);
-                    this.ship.rotation.z += toRad(-2);
+                    // this.ship.rotation.y += toRad(5);
+                   this.ship.rotation.z += toRad(-2);
 
 
 
                 } else if (code == this.LEFT) {
-                    this.ship.rotation.y += toRad(-5);
+               //     this.ship.rotation.y += toRad(-5);
                     this.ship.rotation.z += toRad(2);
-                    sam.magic();
+              //      sam.magic();
 
                 } else if (code == this.DOWN) {
                     this.ship.rotation.x += toRad(1);
@@ -966,14 +960,12 @@
                     let cannon = new Cannon(this.getX(), this.getY(), this.getZ(), this.getPitch(), this.ship.rotation.z, scene);
                     this.weapons.push(cannon);
                     cannon.fire();
-                    if (sam.state == sam.IDLE) {
-                        // console.log("Engaging");
+                   /*  if (sam.state == sam.IDLE) {
                         sam.engage();
                     }
                     else if (sam.state === sam.READY) {
-                        // console.log("Firing");
                         sam.fire();
-                    }
+                    } */
                 }
             }
 
@@ -1002,7 +994,7 @@
                 // console.log("Pitch: " + toDeg(this.getPitch()).toFixed(2) + "degrees, Yaw: " + toDeg(this.getYaw()).toFixed(2) + "degrees, Roll: " + toDeg(this.getRoll()).toFixed(2));
 
                 let tx = Math.sin(this.getYaw()) * -vz;
-                let tz = Math.cos(this.getYaw()) * -vz * Math.cos(this.getPitch());
+                let tz = -vz;// Math.cos(this.getYaw()) * -vz * Math.cos(this.getPitch());
                 let ty = Math.sin(this.getPitch()) * vz;
 
                 this.velocity.y = Math.max(this.MAX_VELOCITY, ty);
@@ -1098,7 +1090,7 @@
 
 
                 camera.position.z = this.getZ() + 5;//-= (camera.position.z - this.getZ() - this.cameraOffset.z) * delta + this.velocity.z * cosB;
-                camera.position.y = this.getY() + 1;// -= (camera.position.y - this.getY() - this.cameraOffset.y) * delta;
+                camera.position.y = this.getY() + 2;// -= (camera.position.y - this.getY() - this.cameraOffset.y) * delta;
                 camera.position.x = this.getX() - 0;// -= (camera.position.x - this.getX() - this.cameraOffset.x) * delta;
 
 
@@ -1193,8 +1185,8 @@
         });
 
         const PLAIN_DIMEN = {
-            x: 5,
-            y: 5,
+            x: 10,
+            y: 15,
             z: 1000,
         };
 
@@ -1216,6 +1208,44 @@
         plane.castShadow = false;
         plane.receiveShadow = true;
         plane.rotation.x = Math.PI / 2;
+
+        function createScene() {
+            let shape2 = new THREE.Shape();
+            let tx = -PLAIN_DIMEN.x / 2;
+            let ty = 0;
+            let tz = 0;
+            let h = PLAIN_DIMEN.y / 2;
+            let w = PLAIN_DIMEN.x;
+            let d = PLAIN_DIMEN.z;
+            let m = 0.25;
+
+            shape2.moveTo(tx + 0, ty + h); // A
+            shape2.lineTo(tx + m, ty + h); // B
+            shape2.lineTo(tx + m, ty + m); // C
+            shape2.lineTo(tx + w - m, ty + m); // D
+            shape2.lineTo(tx + w - m, ty + h); // E
+            shape2.lineTo(tx + w, ty + h); // F
+            shape2.lineTo(tx + w, ty + 0);// G
+            shape2.lineTo(tx + 0, ty + 0); // H
+
+
+            // shape2.moveTo(this.dim.x * 0.2 + this.trans.x, 0 + this.trans.y);
+            // shape2.arc(-this.dim.x * 0.15 / 2, 0, this.dim.x * 0.15 / 2, 0, Math.PI, false);
+
+            let extrudeSettings2 = {
+                steps: 2,
+                depth: PLAIN_DIMEN.z,
+                bevelEnabled: true,
+                bevelThickness: 0,
+                bevelSegment: 2,
+                bevelSize: 0
+            };
+            let mesh3 = new THREE.Mesh(new THREE.ExtrudeGeometry(shape2, extrudeSettings2),
+                new THREE.MeshPhongMaterial({ color: 0x0E0EFF, transparent: true, opacity: 0.5 }));
+            mesh3.position.y -= m;
+            return mesh3;
+        }
+
 
 
 
@@ -1252,7 +1282,7 @@
         //          window.setInterval(addSAMtoScene, 2000);
 
         ship.setY(10.5);
-        ship.setZ(250 + 10);
+        ship.setZ(330 + 10);
 
         camera.position.z = 1;
         camera.position.x = -2;
@@ -1265,10 +1295,37 @@
         const helper = new THREE.CameraHelper(light.shadow.camera);
 
         scene.add(camera);
-   //     scene.add(cylinder);
+        //     scene.add(cylinder);
         scene.add(plane);
+        scene.add(createScene());
+        var ss = createScene();
+        ss.rotation.z = Math.PI;
+        ss.position.y += PLAIN_DIMEN.y / 1;
+        scene.add(ss);
 
-        scene.add(light);
+
+        let aLight = new THREE.AmbientLight(0xFFFFFF);
+        aLight.position.set(0, PLAIN_DIMEN.y / 2, 0);
+        var ambientTarget = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.01, 0.01),
+                new THREE.MeshBasicMaterial());
+        ambientTarget.position.set(0, PLAIN_DIMEN.y / 2, -PLAIN_DIMEN.z);
+        aLight.target = ambientTarget;
+        scene.add(aLight.target);
+        scene.add(aLight);
+
+        let numberOfLights = 25;
+        for (let i = 0; i < (numberOfLights); i++) {
+            var spotLight = new THREE.SpotLight((i % 2 === 0) ? 0x00FFFF : 0xFFFFFF);
+            spotLight.position.set(0, PLAIN_DIMEN.y * 1.5, (PLAIN_DIMEN.z / numberOfLights) * i);
+            var spotTarget = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.01, 0.01),
+                new THREE.MeshBasicMaterial());
+            spotTarget.position.set(0, 0, (PLAIN_DIMEN.z / numberOfLights) * i);
+            spotLight.target = spotTarget;
+            scene.add(spotLight.target);
+            scene.add(spotLight);
+        }
+
+        //      scene.add(light);
         // scene.add(helper);
         scene.add(ship.getMesh());
         scene.add(sam.getMesh());
@@ -1294,7 +1351,7 @@
             number++;
             delta = clock.getDelta();
             requestAnimationFrame(repeatMe);
-            camera.lookAt(ship.getX(), ship.getY(), ship.getZ());
+                   camera.lookAt(ship.getX(), ship.getY(), ship.getZ());
 
 
             //     camera.position.y = ball.getY() + .2;// + 0.2;// + 1;
