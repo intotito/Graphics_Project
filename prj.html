@@ -184,57 +184,42 @@
         var count = 0;
         var delta = 0;
 
-        /**
-         * This method performs the camera adjustment maneuver by rotating and going behind the ball
-         */
-        function positionCamera() {
-            /* let phi = Math.atan2(target.velocity.z, target.velocity.x);
-            let tetha = Math.atan2(target.source.z - target.ball.z, target.source.x - target.ball.x);
-            let ang1 = -theta - Math.PI - phi;
-            let ang2 = 2 * Math.PI - Math.abs(ang1);
-            let ang = Math.abs(ang1) < Math.abs(ang2) ? ang1 : ang2;
-            let x = target.source.x;
-            let z = target.source.z;
-            let progress = (time - markedTime.x) / duration;
-            let angle = progress * ang;
-            let cosB = Math.cos(angle);
-            let sinB = Math.sin(angle);
-            camera.position.x = x * cosB - z * sinB + target.ball.x * (1 - cosB) + target.ball.z * sinB;
-            camera.position.z = x * sinB + z * cosB + target.ball.z * (1 - cosB) - target.ball.x * sinB; */
-
-        }
-
-        /**
-         * The repeatme function that is called for every frames
-         */
-        //      function foo() {
 
 
         const p1 = {
-            x: 0,
+            x: -0.2830,
             z: -0.75
         };
         const p2 = {
             x: 0,
-            z: 161.33880000000346
+            z: 173.3697385477552
         }
-        // const p1 = { x: 80, z: 80 }
-        // const p2 = { x: -70, z: 362 }
+        
 
+        var route = 1;
         const dx = p2.x - p1.x;
         const dz = p2.z - p1.z;
         const d = Math.sqrt(dx * dx + dz * dz);
-
-        const m = Math.asin(dz / d);
-        const w = Math.PI / 2 - m;
-        const theta = toRad(15);
+        const theta = toRad(12);
         const a = (Math.PI - theta) / 2;
-        const Q = Math.PI - a - w;
-        var R = (Math.PI / 2 - Q);
 
-        const r = (d / 2) / Math.cos(a);
-        const h0 = r * Math.sin(R);
-        const w0 = r * Math.cos(R);
+        const m = Math.atan2(dx, dz); //lambda
+        var R = [a + m + Math.PI, a + m];
+        var Q = Math.PI - (theta + R[route]);
+        const r = d * Math.sin(a) / Math.sin(theta);
+
+
+
+
+
+ 
+  //      const w = Math.PI / 2 - m;
+ 
+        const h0 = r * Math.sin(R[route]);
+        const w0 = r * Math.cos(R[route]);
+
+        const h1 = r * Math.sin(Q);
+        const w1 = r * Math.cos(Q);
 
         const width = 20, breadth = 8, height = 4;
 
@@ -243,27 +228,25 @@
             new THREE.CylinderGeometry(r, r, height / 2, 64),
             new THREE.MeshPhongMaterial({ color: 0x0000FF, shininess: 0, specular: 0x111111, transparent: true, opacity: 0.5 })
         );
-        var route = 1;
-        const truth = p2.x > p1.x;
-        if (route == 1) {
-            //    ctx.arc(p2.x - w0, p2.y + h0, r, 0, 2 * Math.PI);
-            console.log("OPTIONA")
-            path.position.x = p2.x + w0;
-            path.position.z = p2.z + h0;
-            R = Math.PI + R;
+
+        // path.position.set(p1.x + h0, 0, p1.z + w0);
+    //    path.position.set(p1.x + h1, 0, p1.z - w1);
+
+
+        
+        
+        if (route === 1) {
+            path.position.set(p1.x + h0, 0, p1.z + w0);
+   //         R = Math.PI + R;
         }
-        else if(route == 0){
-            //  ctx.arc(p1.x + w0, p1.y - h0, r, 0, 2 * Math.PI);
-            console.log("OPTIONB");
-            path.position.x = (p1.x - w0);
-            path.position.z = p1.z - h0;
-            // R += Math.PI;
+        else if(route === 0){
+            path.position.set(p1.x + h1, 0, p1.z - w1);
         }
 
         // const target = new THREE.MeshBasicMaterial(new THREE.BoxGeometry(100, 100, 100),  
         // new THREE.MeshPhongMaterial({ color: 0x00FF00, shininess: 0, specular: 0x111111 }));
 
-        console.log("R = " + toDeg(R) + " h0 = " + h0 + " w0 = " + w0);
+  //      console.log("R = " + toDeg(R) + " h0 = " + h0 + " w0 = " + w0);
 
 
         const missile = new THREE.Mesh(
@@ -288,53 +271,41 @@
 
         console.log("O(x,z): (" + path.position.x + ", " + path.position.z + ")");
         console.log("M x: " + missile.position.x + " z: " + missile.position.z);
-        console.log("r: " + r + " R: " + toDeg(R));
+        console.log("r: " + r + " R: " + toDeg(R[route]));
 
         // const angg1 = Math.acos((missile.position.x - path.position.x) / r);
         const angg2 = -Math.asin((missile.position.z - path.position.z) / r);
-        const angg1 = (Math.PI / 2 - R);
+        const angg1 = (Math.PI / 2 - R[route]);
         //       missile.rotation.y = angg1;
         console.log("Sin A: " + toDeg(angg1) + " Cos A: " + toDeg(angg2));
 
-        const angV = toRad(15) / 438.55012140879916;
+        const angV =  theta  / 38.55012140879916;
         
         //    }
 
         //    foo();
-        var angle = 0;
+       var angle = 0;
         var repeatMe = function () {
-
             number++;
             delta = clock.getDelta();
             time = clock.elapsedTime;
             requestAnimationFrame(repeatMe);
             controls.update();
             renderer.render(scene, camera);
-            console.log("Lx: " + missile.position.x + " Lz: " + missile.position.z);
             if (route == 1) {
-                console.log("OPTION OGINIKA");
-                missile.position.x = path.position.x + r * Math.cos(-R + angle);
-                missile.position.z = path.position.z + r * Math.sin(-R + angle);
+                missile.position.x = path.position.x - r * Math.sin(R[route] + angle);
+                missile.position.z = path.position.z - r * Math.cos(R[route] + angle);
             } else if(route == 0) {
-                console.log("OPTION GINI");
-                missile.position.x = path.position.x + r * Math.cos(R + angle);
-                missile.position.z = path.position.z + r * Math.sin(R + angle);
+                missile.position.x = path.position.x - r * Math.sin(Q + angle);
+                missile.position.z = path.position.z + r * Math.cos(Q + angle);
             }
 
-            // missile.position.x = path.position.x + r * Math.cos(Math.PI - (R + angle));
-            // missile.position.z = path.position.z + r * Math.sin(Math.PI - (R + angle));
-
-            if (route == 1 && angle > toRad(-15)) {
-                console.log("Result: x = " + missile.position.x + " z = " + missile.position.z + " angle: " + toDeg(angle));
-                angle -= angV;
-            } else if (route == 0 && angle < toRad(15)){
-                angle += angV;
-            }
+            angle += angV;
 
             if (route == 1){
-                missile.rotation.y = (R - angle);
+                missile.rotation.y = R[route] + Math.PI / 2 + angle;
             }else if(route == 0){
-                missile.rotation.y = -(R + angle);
+                missile.rotation.y =  -Q + Math.PI / 2 - angle;
             }
         }
         repeatMe();
