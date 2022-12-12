@@ -31,7 +31,7 @@
     <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script> -->
 
     <script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
-    <script src="OrbitControls.js"></script>
+    <!-- <script src="OrbitControls.js"></script> -->
     <div id="info">Nwanne</div>
     <script type="text/javascript">
         const MISSILES = [];
@@ -148,20 +148,19 @@
                     }
                 }
             }
-            explodeCount = 0.7
             explode() {
                 this.state = this.DESTRUCTING;
                 let velocity = [
+                    new THREE.Vector3(-0.1, 0.1, 0.1),
                     new THREE.Vector3(-0.1, 0, 0),
-                    new THREE.Vector3(-0.1, 0, 0),
-                    new THREE.Vector3(0.1, 0, 0),
-                    new THREE.Vector3(0.1, 0.1, 0)
+                    new THREE.Vector3(0.1, 0, 0.1),
+                    new THREE.Vector3(0.1, 0.1, -0.1)
                 ];
                 let reaction = [
+                    new THREE.Vector3(-1, 0.5, 0.25),
                     new THREE.Vector3(-1, 0, 0),
-                    new THREE.Vector3(-1.5, 0, 0),
-                    new THREE.Vector3(1, 0, 0),
-                    new THREE.Vector3(1, 1, 0)
+                    new THREE.Vector3(0.5, 0, 0.3),
+                    new THREE.Vector3(1, 1, -1)
                 ];
                 this.getMesh().children.forEach((c, i) => {
                     c.finalPosition = c.position.clone().add(reaction[i]);
@@ -170,45 +169,33 @@
                 });
             }
 
-            getSign(value){
+            getSign(value) {
                 return value / Math.abs(value);
             }
             exploding() {
 
-                this.getMesh().children.forEach((c) => {
+                this.getMesh().children.forEach((c, index) => {
                     console.log(c.name);
-                    
+                    let unfired = this.missiles.filter((m, i) => (i >= this.count && index == 3));
                     if (c.position.x * this.getSign(c.velocity.x) < c.finalPosition.x * this.getSign(c.velocity.x)) {
                         c.position.x += c.velocity.x;
-                    } if (c.position.y * this.getSign(c.velocity.y) < c.finalPosition.y * this.getSign(c.velocity.y)) {
-                        c.position.y += c.velocity.y;
+                        unfired.forEach((m) => {
+                            m.vehicle.position.x += c.velocity.x;
+                            m.vehicle.rotation.z += 0.01;
+                        });
+                        c.rotation.z += 0.01;
+                    } if (c.position.y >= 0) {
+                        c.position.y += (c.velocity.y += -0.01);
+                        unfired.forEach((m) => {
+                            m.vehicle.position.y += (c.velocity.y);
+                        })
                     } if (c.position.z * this.getSign(c.velocity.z) < c.finalPosition.z * this.getSign(c.velocity.z)) {
                         c.position.z += c.velocity.z;
+                        unfired.forEach((m) => {
+                            m.vehicle.position.z += -c.velocity.z;
+                        })
                     }
                 });
-                return;
-
-                const incr = 0.1;
-                var explosionCenter = new THREE.Vector3(0, 0, 0);
-                var explodeValue = 5;
-                console.log("^^^^", "^^^Count", this.explodeCount);
-                for (var i = 0; i < this.getMesh().children.length && this.explodeCount <= explodeValue; i++) {
-                    var child = this.getMesh().children[i];
-
-                    if (!child.geometry.boundingSphere) {
-                        child.geometry.computeBoundingSphere();
-                        //      console.log("Explode", child.boundingSphere);
-                    }
-                    if (child.oldPosition) {
-                        child.oldPosition = child.oldPosition || child.geometry.boundingSphere.center.clone();
-                        child.direction = child.oldPosition.clone().sub(explosionCenter).normalize();
-                        console.log("^^^", "^^^Child pos", child.position, "^^^Old pos", child.oldPosition, "Directioin", direction);
-                    }
-                    child.position.x = direction.x;// + incr;// + incr * direction.x;
-                    child.position.y = direction.y;// + incr;// + incr * direction.y;
-                    child.position.z = direction.z;// + incr;// + incr * direction.z;
-                }
-                this.explodeCount += incr;
             }
             constructor(x, z) {
                 this.engageAngle = toRad(45); // change here
@@ -562,8 +549,8 @@
                 this.yaw = yaw;
                 let geometry = new THREE.SphereGeometry(
                     0.05,//  radius
-                    10,// widthSegments
-                    10// heightSegments
+                    16,// widthSegments
+                    16// heightSegments
                 );
                 let material = new THREE.MeshPhongMaterial({ color: 0xFF0000 });
                 this.sphere = new THREE.Mesh(geometry, material);
@@ -626,6 +613,21 @@
                         }
                     }
                 }
+                // COLLISSION DETTECTION
+                SAMS.filter((s) => {
+                    if (this.getZ() - s.getZ() < 100) {  // Check only with Sams within 20 unit distance
+                        return true;
+                    }
+                    return false;
+                }).forEach((s) => {
+                    let samBB = new THREE.Box3().setFromObject(s.getMesh());
+                    let cannonBB = new THREE.Box3().setFromObject(this.getMesh());
+                    if (samBB.intersectsBox(cannonBB)) {
+                        console.log("Collide", "COllided !!!!!!");
+                        s.explode();
+                    }
+                });
+
             }
 
             fire() {
@@ -1070,7 +1072,13 @@
                 return this.ship.rotation.x + Math.PI / 2;
             }
 
+            keyPressed = {};
 
+            handleKeyUpEvent(code){
+                if(code == this.RIGHT){
+                    
+                }
+            }
             handleKeyEvent(code, scene) {
                 // console.log("Key pressed working!!");
                 if (code == this.RIGHT) {
@@ -1096,23 +1104,22 @@
 
                 } else if (code == this.UP) {
                     this.ship.rotation.x += toRad(-1);
-                } else if (code == this.FIRE_CANNON) {
+                } if (code == this.FIRE_CANNON) {
                     let cannon = new Cannon(this.getX(), this.getY(), this.getZ(), this.getPitch(), this.ship.rotation.z, scene);
                     this.weapons.push(cannon);
                     cannon.fire();
 
-                    //          SAMS[0].explode();
-                    console.log("Sam state", sam.state)
-                    if (sam.state == sam.IDLE) {
-                        sam.engage();
-                    }
-                    else if (sam.state === sam.READY) {
-                        console.log("Told to explode");
-                        sam.explode();
-                    } else if (sam.state === sam.DESTRUCTING) {
-                        sam.state = sam.READY;
-                    }
-                    console.log("Sam state", sam.state)
+                    /*  console.log("Sam state", sam.state)
+                     if (sam.state == sam.IDLE) {
+                         sam.engage();
+                     }
+                     else if (sam.state === sam.READY) {
+                         console.log("Told to explode");
+                         sam.explode();
+                     } else if (sam.state === sam.DESTRUCTING) {
+                         sam.state = sam.READY;
+                     }
+                     console.log("Sam state", sam.state) */
                 }
             }
 
@@ -1287,10 +1294,11 @@
         //    //     ship.handleKeyEvent(e.which, scene);
         //     };
         $(document.body).on('keydown', function (e) {
-
             ship.handleKeyEvent(e.which, scene);
-
         });
+        $(document.body).on('keyup', (e)=>{
+            ship.handleKeyUpEvent(e.which);
+        })
 
         const PLAIN_DIMEN = {
             x: 30,
@@ -1392,23 +1400,23 @@
         }
 
 
-        //      window.setInterval(addSAMtoScene, 2000);
+        window.setInterval(addSAMtoScene, 2000);
 
         // ship.getMesh().position.set(0, 10, 0)
         ship.setY(10.5);
-        ship.setZ(1000);
+        ship.setZ(10);
         ship.setX(0);
 
         // camera.position.z = ship.getZ() + 3;
         // camera.position.x = ship.getX() + 0;
         // camera.position.y = ship.getY() + 3;
         // light.position.z = camera.position.z + 2;
-        const sam = new SAMLauncher(0, 0);
-        sam.setX(0);
-        sam.setZ(-5);
-        scene.add(sam.getMesh())
-        sam.addMissiles(scene);
-
+        /*       const sam = new SAMLauncher(0, 0);
+              sam.setX(0);
+              sam.setZ(-5);
+              scene.add(sam.getMesh())
+              sam.addMissiles(scene);
+       */
         // sam.setZ(-2);
 
         //    ship.yaw(toRad(5));
@@ -1449,7 +1457,7 @@
         scene.add(ship.getMesh());
 
 
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        // const controls = new THREE.OrbitControls(camera, renderer.domElement);
         var number = 45;
 
         const clock = new THREE.Clock();
@@ -1480,14 +1488,14 @@
             //        time = clock.elapsedTime;
             // ship.getMesh().rotation.z += toRad(1);
             //console.log("Location: " + location);
-            // ship.move(camera, light)
+            ship.move(camera, light)
             //          location = ship.getZ();
-            controls.update();
+            // controls.update();
             //           sam.getMesh().rotation.y += toRad(0.5);
             angle += toRad(0.5);
             // ship.yaw(toRad(1));
             // sam.rotateY(move);
-            sam.move();
+            // sam.move();
 
             SAMS.forEach((s) => {
                 s.move();
