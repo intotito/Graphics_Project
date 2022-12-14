@@ -768,9 +768,6 @@
 
 
 
-
-                //             console.log("R = " + toDeg(R) + " h0 = " + h0 + " w0 = " + w0);
-                //     let truth = p2.x > p1.x;
                 if (target.route === 1) {
                     this.center.x = p1.x + h0;
                     this.center.z = p1.z + w0;
@@ -781,36 +778,11 @@
                     this.center.z = p1.z - w1;
                 }
 
-                //            let angV = Math.PI * 2 / 300;
-                //                let angg1 = (Math.PI / 2 - R);
                 this.angR = R[target.route];//-(R - Math.PI / 2);
                 this.angQ = Math.PI - (theta + R[target.route]);
                 this.radius = r;
                 this.angVel = target.angularVelocity;
-                //               console.log("O(x,z): (" + this.center.x + ", " + this.center.z + ")");
 
-                // console.log("angg1 = " + toDeg(angg1) + "tilt = " + toDeg(this.angR) + " Radius = " + this.radius + " angvel = " + toDeg(target.angularVelocity));
-
-
-
-
-
-
-
-
-
-                /*                 let dy = ship.getY() - this.getY();
-                                let dx = ship.getX() - this.getX();
-                                let dz = ship.getZ() - this.getZ();
-                                this.target_Angle = Math.atan2(dx, dz) * 1;// * 2.5 * (6 / Math.sqrt(dz**2 + dy**2));
-                                if (toDeg(this.target_Angle) > 45) {
-                                    this.target_Angle = toDeg(30);
-                                }
-                                this.timer.getDelta();
-                 */                //                 console.log("MTEST", `Missile Fired x: ${this.getX()} y: ${this.getY()} z: ${this.getZ()}
-                // Target Angle (X): ${toDeg(this.target_Angle)} Current Angle (Y): ${toDeg(this.vehicle.rotation.x)}`)
-                //                 console.log("XXX --- " + toDeg(this.target_Angle));
-                //          console.log("EngageX at: " + toDeg(Math.atan2(dy, dz)))
                 this.state = this.FLYIING;
                 // console.log("Check: " + toDeg(Math.PI / 2 + this.vehicle.rotation.x));
                 let vel = MISSILE_VELOCITY;
@@ -876,18 +848,17 @@
                         //               this.vehicle.rotation.y += angY;
                     }
                     if (y <= 0) {
-                        //                          console.log("MTest", ` Missile landed x: ${this.getX()} y: ${this.getY()} z: ${this.getZ()}
-                        // Target Angle (X): ${toDeg(this.target_Angle)} Current Angle (Y): ${toDeg(this.vehicle.rotation.x)} Time of Flight: ${this.timer.getElapsedTime().toFixed(2)}`);
-                        //           console.log("Result", " xx = " + xx + " VS x = " + x + " ||| zz = " + zz + " VS z = " + z + " dz = " + (zz - z) + " Angle: " + toDeg(this.gainAngle));
                         this.state = this.EXPLODING;
                     }
                     this.gainAngle += this.angVel;
-                    /*                     if (this.target.route == 1) {
-                                            this.gainAngle -= this.angVel;
-                                        } else if (this.target.route == 0) {
-                                            this.gainAngle += this.angVel;
-                                        }
-                     */                    // console.log("RRR: " + toDeg(this.vehicle.rotation.y));
+
+                    // COLLISSION DETECTION
+                    let missileBB = new THREE.Box3().setFromObject(this.getMesh());
+                    let shipBB = new THREE.Box3().setFromObject(ship.getMesh());
+                    if (missileBB.intersectsBox(shipBB)) {
+                        ship.rock();
+                    }
+
                 } else if (this.state === this.EXPLODING) {
                     // console.log("EXPLODING MISSILE");
                 }
@@ -1074,18 +1045,26 @@
 
             keyPressed = {};
 
-            handleKeyUpEvent(code){
-                if(code == this.RIGHT){
-                    
+            handleKeyDown(event) {
+                let k = event.key;
+                if (k == 'Control' || k == 'ArrowUp' || k == 'ArrowDown' || k == 'ArrowLeft' || k == 'ArrowRight') {
+                    this.keyPressed[k] = true;
                 }
             }
+            handleKeyUp(event) {
+                let k = event.key;
+                if (k == 'Control' || k == 'ArrowUp' || k == 'ArrowDown' || k == 'ArrowLeft' || k == 'ArrowRight') {
+                    this.keyPressed[k] = false;
+                }
+            }
+
             handleKeyEvent(code, scene) {
                 // console.log("Key pressed working!!");
                 if (code == this.RIGHT) {
                     // this.ship.rotation.y += toRad(5);
-                    this.ship.rotation.z += toRad(-1);
-                    if (this.ship.rotation.z < toRad - 12.5) {
-                        this.ship.rotation.z = toRad(-12.5);
+                    this.ship.rotation.z += toRad(-0.5);
+                    if (this.ship.rotation.z < toRad(-35)) {
+                        this.ship.rotation.z = toRad(-35);
                     }
 
 
@@ -1093,9 +1072,9 @@
                 } else if (code == this.LEFT) {
                     //     this.ship.rotation.y += toRad(-5);
                     console.log("RRR", toDeg(this.ship.rotation.z));
-                    this.ship.rotation.z += toRad(1);
-                    if (this.ship.rotation.z > toRad(12.5)) {
-                        this.ship.rotation.z = toRad(12.5);
+                    this.ship.rotation.z += toRad(0.5);
+                    if (this.ship.rotation.z > toRad(35)) {
+                        this.ship.rotation.z = toRad(35);
                     }
                     //      sam.magic();
 
@@ -1104,11 +1083,11 @@
 
                 } else if (code == this.UP) {
                     this.ship.rotation.x += toRad(-1);
-                } if (code == this.FIRE_CANNON) {
+                } if (code == this.FIRE_CANNON && this.can_fire === true) {
                     let cannon = new Cannon(this.getX(), this.getY(), this.getZ(), this.getPitch(), this.ship.rotation.z, scene);
                     this.weapons.push(cannon);
                     cannon.fire();
-
+                    this.can_fire = false;
                     /*  console.log("Sam state", sam.state)
                      if (sam.state == sam.IDLE) {
                          sam.engage();
@@ -1122,9 +1101,27 @@
                      console.log("Sam state", sam.state) */
                 }
             }
-
-            count = 0;
+            can_fire = true;
+            count = 0; // Number of missiles fired
             move(camera, light) {
+
+                if (this.keyPressed['Control'] === true && this.can_fire === true) {
+                    this.handleKeyEvent(this.FIRE_CANNON, scene);
+                    window.setTimeout(() => {
+                        if (this.can_fire === false)
+                            this.can_fire = true;
+                    }, 200);
+                }
+                if (this.keyPressed['ArrowLeft'] === true) {
+                    this.handleKeyEvent(this.LEFT, scene);
+                } else if (this.keyPressed['ArrowRight'] === true) {
+                    this.handleKeyEvent(this.RIGHT, scene);
+                }
+                if (this.keyPressed['ArrowUp'] === true) {
+                    this.handleKeyEvent(this.UP, scene);
+                } else if (this.keyPressed['ArrowDown'] === true) {
+                    this.handleKeyEvent(this.DOWN, scene)
+                }
 
                 this.weapons.forEach((weap) => {
                     weap.move();
@@ -1204,16 +1201,31 @@
                 // let translate = camDiff * delta;// + this.velocity.z * cosB + this.velocity.z * sinB;
 
 
-                camera.position.z = this.getZ() + 2.5;//-= (camera.position.z - this.getZ() - this.cameraOffset.z) * delta + this.velocity.z * cosB;
-                camera.position.y = this.getY() + 1.5;// -= (camera.position.y - this.getY() - this.cameraOffset.y) * delta;
-                camera.position.x = this.getX() - 0;// -= (camera.position.x - this.getX() - this.cameraOffset.x) * delta;
 
-
-                light.position.z = camera.position.z + 2;
 
 
                 distanceZ = this.getZ();
+                //     console.log("Collide", this.rocking);
+                if (this.rocking === true) { // Must have been hit or something
+                    camera.position.x += this.rocking_count * ((this.rocking_count % 2 === 0) ? -1 : 1);
+                    this.rocking_count--;
+                    //       console.log("Collide", "Rocking", "jamming", this.rocking_count);
+                    if (this.rocking_count <= 0) {
+                        this.rocking = false;
+                    }
+                }
+
             }
+
+            rock() {
+                this.rocking = true;
+                this.rocking_count = 10;
+                console.log("Collide", " MAYDAY!!!!!! COllided !!!!!!", this.rocking, "and", this.rocking_count);
+            }
+
+            rocking_count = 0;
+            rocking = false;
+
             getMesh() {
                 //  return this.sprite;
                 return this.ship;
@@ -1294,10 +1306,11 @@
         //    //     ship.handleKeyEvent(e.which, scene);
         //     };
         $(document.body).on('keydown', function (e) {
-            ship.handleKeyEvent(e.which, scene);
+            // ship.handleKeyEvent(e.which, scene);
+            ship.handleKeyDown(e);
         });
-        $(document.body).on('keyup', (e)=>{
-            ship.handleKeyUpEvent(e.which);
+        $(document.body).on('keyup', (e) => {
+            ship.handleKeyUp(e);
         })
 
         const PLAIN_DIMEN = {
@@ -1488,6 +1501,14 @@
             //        time = clock.elapsedTime;
             // ship.getMesh().rotation.z += toRad(1);
             //console.log("Location: " + location);
+
+            camera.position.z = ship.getZ() + 2.5;//-= (camera.position.z - this.getZ() - this.cameraOffset.z) * delta + this.velocity.z * cosB;
+            camera.position.y = ship.getY() + 1.5;// -= (camera.position.y - this.getY() - this.cameraOffset.y) * delta;
+            camera.position.x = ship.getX() - 0;// -= (camera.position.x - this.getX() - this.cameraOffset.x) * delta;
+
+
+            light.position.z = camera.position.z + 2;
+
             ship.move(camera, light)
             //          location = ship.getZ();
             // controls.update();
