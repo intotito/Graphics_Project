@@ -3,25 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
-    <title></title>
-    <style type="text/css">
-        html,
-        body {
-            margin: 0;
-            height: 100%;
-            overflow: hidden
-        }
-
-        #info {
-            position: absolute;
-            top: 10px;
-            width: 100%;
-            text-align: center;
-            z-index: 100;
-            display: block;
-            color: white;
-        }
-    </style>
+    <title>Night Raider</title>
+    <link rel="stylesheet" href="./style/style.css">
+    
 </head>
 
 <body>
@@ -32,7 +16,22 @@
 
     <script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
     <!-- <script src="OrbitControls.js"></script> -->
-    <div id="info">Nwanne</div>
+    <div id="main-panel">
+        <div id="title-container">
+            <span id="main-title-text">Night Raider</span>
+        </div>
+        <div id="button-container">
+            <Button id="start-button">Start</Button>
+        </div>
+        <div id="button-container">
+
+            <Button id="high-button">High Scores</Button>
+        </div>
+    </div>
+
+
+
+
     <script type="text/javascript">
         const MISSILES = [];
         const CANNONS = [];
@@ -1381,7 +1380,7 @@
 
 
         var toRad = (angle) => {
-            return angle * Math.PI / 180;
+            return angle * Math.PI / 180;d
         }
 
         var toDeg = (angle) => {
@@ -1394,7 +1393,7 @@
         var lastDistanceZ = 160;
         function addSAMtoScene() {
             if ((lastDistanceZ - ship.getZ()) > 100) {
-                let shiftz = [0, 20, 40]
+                let shiftz = [0, 20, 40, 55]
                 for (let i = 0; i < shiftz.length; i++) {
                     console.log("Interval fired " + (25 * ship.velocity.z) + " shiP : " + ship.getZ());
                     const sss = new SAMLauncher(0, 0);
@@ -1509,7 +1508,7 @@
 
             light.position.z = camera.position.z + 2;
 
-            ship.move(camera, light)
+           ship.move(camera, light)
             //          location = ship.getZ();
             // controls.update();
             //           sam.getMesh().rotation.y += toRad(0.5);
