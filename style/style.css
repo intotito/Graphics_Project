@@ -16,7 +16,30 @@ body {
 }
 
 #live-bar{
-    top:0%;
+    background: #200;
+    border: solid 2px #250000;
+    width: 70%;
+    height: 24px;
+    border-radius:5px;
+    display:flex;
+    justify-items: center;
+    /* justify-content: center; */
+}
+
+#live-bar div{
+    height: 20px;
+    border-radius: 5px;
+    width:50%;
+    background-color: #600;
+    border-top:solid 3px #700;
+    border-left:solid 3px #700;
+    border-right:solid 3px #500;
+    border-bottom: solid 3px #500;
+    transition: width 1s;
+}
+
+#live-bar div:hover{
+    width:90%;
 }
 
 #main-title-text{
@@ -27,10 +50,29 @@ body {
     font-family: monospace;
     font-style: b;
 }
-
-#start-button,
-#high-button{
+#resume-button,
+#start-button{
     background-color: forestgreen;
+    color:white;
+    cursor:pointer;
+    font-family: monospace;
+    padding:1rem;
+    border: 1px solid darkblue;
+    border-radius: 1rem;
+    font-size: large;
+}
+#high-button{
+    background-color: chartreuse;
+    color:white;
+    cursor:pointer;
+    font-family: monospace;
+    padding:1rem;
+    border: 1px solid darkblue;
+    border-radius: 1rem;
+    font-size: large;
+}
+#restart-button{
+    background-color: tomato;
     color:white;
     cursor:pointer;
     font-family: monospace;
@@ -71,4 +113,76 @@ body {
     opacity: 0.9;
     z-index: 20;
     padding-bottom: 200px;
+    /* display:none; */
 }
+#paused-panel{
+    position:absolute;
+    top:0;
+    bottom:0;
+    left:0;
+    right:0;
+    background-color: black;
+    display: flex;
+    flex-direction: column;
+    place-items: center;
+    justify-content: center;
+    opacity: 0.9;
+    z-index: 20;
+    padding-bottom: 200px;
+    display:none;
+}
+
+#game-info{
+    position:absolute;
+    top:20px;
+    left:25px;
+    width:250px;
+    height:122px;
+    z-index: 15;
+    border: 2px solid #23F;
+    border-radius: 15px;
+}
+#img_container{
+    display: flex;
+    justify-items: center;
+    margin-right: 1rem;
+}
+#img_live1,
+#img_live2,
+#img_live3 {
+    width: 32px;
+    height: 24px;
+    padding: 4px;
+}
+
+.info-row{
+    display:flex;
+    padding: 2px;
+    justify-content: center;
+}
+.player-name{
+    font-family: monospace;
+    font-size:large;
+    color:white;
+    padding-right:15px;
+    padding-left:10px;
+    padding-top: 5px;
+}
+
+.divider {
+    border-top: 1px solid #111;
+    border-bottom: 1px solid #446;
+    border-radius: 1px;
+    /* height: 2px; */
+    width: 95%;
+  }
+
+  #score{
+    font-family: monospace;
+    font-size:large;
+    color:orange;
+    padding-right:px;
+    padding-left:10px;
+    padding-top: 5px;
+ 
+  }

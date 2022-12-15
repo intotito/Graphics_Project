@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <title>Night Raider</title>
     <link rel="stylesheet" href="./style/style.css">
-    
+
 </head>
 
 <body>
@@ -29,10 +29,71 @@
         </div>
     </div>
 
+    <div id="paused-panel">
+        <div id="title-container">
+            <span id="main-title-text">Night Raider</span>
+        </div>
+        <div id="button-container">
+            <Button id="resume-button">Resume</Button>
+        </div>
+        <div id="button-container">
+
+            <Button id="restart-button">Restart</Button>
+        </div>
+    </div>
+
+    <div id="game-info">
+        <div class="info-row">
+            <div class="divider"></div>
+        </div>
+        <div class="info-row">
+            <div class="player-name">Live:</div>
+            <div id="img_container">
+                <img id="img_live1" src="./images/live_.svg">
+
+                <img id="img_live2" src="./images/live_1.svg">
+
+                <img id="img_live3" src="./images/live_1.svg">
+            </div>
+        </div>
+        <div class="info-row">
+            <div class="divider"></div>
+        </div>
+        <div class="info-row">
+            <div class="player-name">Health:</div>
+            <div id="live-bar">
+                <div id="live"></div>
+            </div>
+        </div>
+        <div class="info-row">
+            <div class="divider"></div>
+        </div>
+        <div class="info-row">
+            <div class="player-name">Score</div>
+            <div id="score">38200
+            </div>
+        </div>
+        <div class="info-row">
+            <div class="divider"></div>
+        </div>
+    </div>
+
+
 
 
 
     <script type="text/javascript">
+        var resumeButton = document.getElementById('resume-button');
+        var restartButton = document.getElementById('restart-button');
+        var highsButton = document.getElementById('high-button');
+
+
+        resumeButton.addEventListener("click", (event) => {
+            paused = false;
+            document.getElementById('paused-panel').style.display = 'none';
+        });
+
+
         const MISSILES = [];
         const CANNONS = [];
         const SAMS = [];
@@ -1049,6 +1110,11 @@
                 if (k == 'Control' || k == 'ArrowUp' || k == 'ArrowDown' || k == 'ArrowLeft' || k == 'ArrowRight') {
                     this.keyPressed[k] = true;
                 }
+                if (k == 'Escape') {
+                    paused = true;
+                    console.log("clicked", document.getElementById('paused-panel'))
+                    document.getElementById('paused-panel').style.display = 'block';
+                }
             }
             handleKeyUp(event) {
                 let k = event.key;
@@ -1242,9 +1308,7 @@
                 0.1, // inner view
                 1000 // outer view
             );
-            camera.position.z = 5;
-            camera.position.y = 2.5;
-            camera.position.x = -1;
+
 
             //     camera.position.x = 0;
 
@@ -1311,6 +1375,7 @@
         $(document.body).on('keyup', (e) => {
             ship.handleKeyUp(e);
         })
+
 
         const PLAIN_DIMEN = {
             x: 30,
@@ -1380,7 +1445,7 @@
 
 
         var toRad = (angle) => {
-            return angle * Math.PI / 180;d
+            return angle * Math.PI / 180; d
         }
 
         var toDeg = (angle) => {
@@ -1418,6 +1483,12 @@
         ship.setY(10.5);
         ship.setZ(10);
         ship.setX(0);
+       
+        camera.position.z = ship.getZ() + 2.5;//-= (camera.position.z - this.getZ() - this.cameraOffset.z) * delta + this.velocity.z * cosB;
+        camera.position.y = ship.getY() + 1.5;// -= (camera.position.y - this.getY() - this.cameraOffset.y) * delta;
+        camera.position.x = ship.getX() - 0;// -= (camera.position.x - this.getX() - this.cameraOffset.x) * delta;
+         camera.lookAt(ship.getX(), ship.getY(), ship.getZ());
+        light.position.z = camera.position.z + 2;
 
         // camera.position.z = ship.getZ() + 3;
         // camera.position.x = ship.getX() + 0;
@@ -1480,47 +1551,34 @@
             y: 0.7,
             z: 1.7
         }
-        var time = 0;
+
         const duration = Number.MAX_VALUE - Number.MAX_VALUE + 1.2; // 2 seconds maneurverA
-        var angle = 0;
+        var paused = true;
 
 
         var repeatMe = function () {
             number++;
             delta = clock.getDelta();
             requestAnimationFrame(repeatMe);
-            camera.lookAt(ship.getX(), ship.getY(), ship.getZ());
-            // camera.lookAt(0, 0, 0);
-
-            //     camera.position.y = ball.getY() + .2;// + 0.2;// + 1;
-            //      camera.lookAt(0, 0, -100);
 
 
-            //        clock.getDelta();
-            //        time = clock.elapsedTime;
-            // ship.getMesh().rotation.z += toRad(1);
-            //console.log("Location: " + location);
-
-            camera.position.z = ship.getZ() + 2.5;//-= (camera.position.z - this.getZ() - this.cameraOffset.z) * delta + this.velocity.z * cosB;
-            camera.position.y = ship.getY() + 1.5;// -= (camera.position.y - this.getY() - this.cameraOffset.y) * delta;
-            camera.position.x = ship.getX() - 0;// -= (camera.position.x - this.getX() - this.cameraOffset.x) * delta;
 
 
-            light.position.z = camera.position.z + 2;
-
-           ship.move(camera, light)
-            //          location = ship.getZ();
             // controls.update();
-            //           sam.getMesh().rotation.y += toRad(0.5);
-            angle += toRad(0.5);
-            // ship.yaw(toRad(1));
-            // sam.rotateY(move);
+
+
             // sam.move();
-
-            SAMS.forEach((s) => {
-                s.move();
-            });
-
+            if (paused === false) {
+                camera.lookAt(ship.getX(), ship.getY(), ship.getZ());
+                camera.position.z = ship.getZ() + 2.5;//-= (camera.position.z - this.getZ() - this.cameraOffset.z) * delta + this.velocity.z * cosB;
+                camera.position.y = ship.getY() + 1.5;// -= (camera.position.y - this.getY() - this.cameraOffset.y) * delta;
+                camera.position.x = ship.getX() - 0;// -= (camera.position.x - this.getX() - this.cameraOffset.x) * delta;
+                light.position.z = camera.position.z + 2;
+                ship.move(camera, light);
+                SAMS.forEach((s) => {
+                    s.move();
+                });
+            }
             renderer.render(scene, camera);
 
         }
