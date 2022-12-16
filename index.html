@@ -16,6 +16,8 @@
 
     <script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
     <!-- <script src="OrbitControls.js"></script> -->
+
+    <canvas id="img-back"></canvas>
     <div id="main-panel">
         <div id="title-container">
             <span id="main-title-text">Night Raider</span>
@@ -28,6 +30,26 @@
             <Button id="high-button">High Scores</Button>
         </div>
     </div>
+    <div id="game-over-panel">
+        <div id="title-container">
+            <span id="main-title-text">Night Raider</span>
+        </div>
+        <div id="title-container">
+            <span id="title-text">Game Over</span>
+        </div>
+        <div id="title-container">
+            <span id="score-title-text">Score: </span>
+        </div>
+        <div id="button-container">
+            <Button id="restart-button">Restart</Button>
+        </div>
+        <div id="button-container">
+
+            <Button id="high-button">High Scores</Button>
+        </div>
+    </div>
+
+    <div id="score-card">+2000</div>
 
     <div id="paused-panel">
         <div id="title-container">
@@ -41,6 +63,9 @@
             <Button id="restart-button">Restart</Button>
         </div>
     </div>
+    <div id="count-container">
+        <div id="count-down">5</div>
+    </div>
 
     <div id="game-info">
         <div class="info-row">
@@ -51,9 +76,9 @@
             <div id="img_container">
                 <img id="img_live1" src="./images/live_.svg">
 
-                <img id="img_live2" src="./images/live_1.svg">
+                <img id="img_live2" src="./images/live_.svg">
 
-                <img id="img_live3" src="./images/live_1.svg">
+                <img id="img_live3" src="./images/live_.svg">
             </div>
         </div>
         <div class="info-row">
@@ -61,8 +86,8 @@
         </div>
         <div class="info-row">
             <div class="player-name">Health:</div>
-            <div id="live-bar">
-                <div id="live"></div>
+            <div id="health-bar">
+                <div id="health"></div>
             </div>
         </div>
         <div class="info-row">
@@ -83,20 +108,31 @@
 
 
     <script type="text/javascript">
+        var startButton = document.getElementById('start-button');
         var resumeButton = document.getElementById('resume-button');
         var restartButton = document.getElementById('restart-button');
         var highsButton = document.getElementById('high-button');
 
 
+        startButton.addEventListener('click', (event) => {
+            document.getElementById('main-panel').style.display = 'none';
+            let healthElement = document.getElementById('health');
+            healthElement.style.width = '100%';
+            paused = false;
+        })
         resumeButton.addEventListener("click", (event) => {
             paused = false;
             document.getElementById('paused-panel').style.display = 'none';
+        });
+        restartButton.addEventListener("click", (event) => {
+            paused = false;
+            document.location.reload();
         });
 
 
         const MISSILES = [];
         const CANNONS = [];
-        const SAMS = [];
+        var SAMS = [];
         const MISSILE_VELOCITY = 0.65;
         const SHIP_VELOCITY = 0.35;
         const GRAVITY = -0.001;
@@ -135,8 +171,6 @@
                 }
             ];
 
-
-            health = 0;
             attackAngle = toRad(4); // change here ** Describes the radius of the circular path the missile takes to its target
             count = 0;
             angle = 0;
@@ -200,7 +234,7 @@
                 this.SAM.position.z = z;
                 for (let i = 0; i < 4; i++) {
                     if (i >= this.count) {
-                        console.log("HOwm any times " + i);
+                        // console.log("HOwm any times " + i);
                         this.missiles[i].setZ(z - this.dim.x / 2);
                         //unfired move
                     } else {
@@ -235,7 +269,7 @@
             exploding() {
 
                 this.getMesh().children.forEach((c, index) => {
-                    console.log(c.name);
+                    // console.log(c.name);
                     let unfired = this.missiles.filter((m, i) => (i >= this.count && index == 3));
                     if (c.position.x * this.getSign(c.velocity.x) < c.finalPosition.x * this.getSign(c.velocity.x)) {
                         c.position.x += c.velocity.x;
@@ -292,7 +326,7 @@
                 geometry.translate(0, 0, this.dim.z / -2);
                 this.mesh = new THREE.Mesh(geometry,
                     new THREE.MeshPhongMaterial({ color: 0x00ff00 }));
-                this.mesh.name = "Chasis";
+                //      this.mesh.name = "Chasis";
 
 
                 let shape1 = new THREE.Shape();
@@ -311,10 +345,10 @@
                 this.mesh1 = new THREE.Mesh(new THREE.ExtrudeGeometry(shape1, extrudeSettings1),
                     new THREE.MeshPhongMaterial({ color: 0x2F2F2F }));
                 this.mesh1.geometry.translate(0, 0, -this.dim.z * 1.1 / 2);
-                this.mesh1.name = "Front Tyre";
+                // this.mesh1.name = "Front Tyre";
                 this.mesh2 = new THREE.Mesh(new THREE.ExtrudeGeometry(shape1, extrudeSettings1),
                     new THREE.MeshPhongMaterial({ color: 0x2F2F2F }));
-                this.mesh2.name = "Back Tyre";
+                // this.mesh2.name = "Back Tyre";
                 // console.log(this.mesh2.geometry);
                 this.mesh2.geometry.translate(0.7 * this.dim.x, 0, -this.dim.z * 1.1 / 2);
 
@@ -364,7 +398,7 @@
                 //     this.mesh3.geometry.translate(0, 0, -0.2 * this.dim.x);
                 this.mesh3.position.x = -this.dim.x / 2;
                 this.mesh3.position.y = this.dim.y / 2;
-                this.mesh3.name = "Launching Casing";
+                // this.mesh3.name = "Launching Casing";
                 // console.log(this.mesh3.geometry);
 
 
@@ -393,7 +427,7 @@
                 this.missiles.forEach((m) => {
                     scene.add(m.getMesh());
                 });
-                console.log("Missiles added");
+                // console.log("Missiles added");
             }
 
 
@@ -494,9 +528,9 @@
                         if (SAMS[i] == this) {
                             SAMS.splice(i, 1);
                             for (let j = 0; j < this.missiles.length; j++) {
-                                scene.remove(this.missiles[j]);
+                                scene.remove(this.missiles[j].getMesh());
                             }
-                            scene.remove(this);
+                            scene.remove(this.getMesh());
                             // console.log("Remover", "I just removed myself from the scene"); 0
                             break;
                         }
@@ -549,7 +583,7 @@
                 }
                 this.engage();
 
-                console.log("Magic", " count: ", this.count, " Shift: ", this.shift);
+                // console.log("Magic", " count: ", this.count, " Shift: ", this.shift);
                 this.engage();
                 if (this.count == 3) {
                     this.state = this.RETRACTING;
@@ -585,7 +619,7 @@
                 } else {
                     this.missiles[this.count].getMesh().rotation.x = -Number(this.TELEMENTRIES[this.count].engageAngle);
                     this.state = this.READY;
-                    console.log("WHo's calling me")
+                    // console.log("WHo's calling me")
                 }
             }
         }
@@ -617,7 +651,7 @@
                 this.sphere.position.x = x;
                 this.sphere.position.y = y;
                 this.sphere.position.z = z;
-                this.sphere.castShadow = true;
+                // this.sphere.castShadow = true;
                 this.velocity.z = this.RELEASE_VELOCITY * Math.cos(pitch) * Math.cos(yaw);
                 this.velocity.x = this.RELEASE_VELOCITY * Math.sin(yaw);
                 this.velocity.y = this.RELEASE_VELOCITY * Math.sin(-pitch);
@@ -667,7 +701,7 @@
                     for (let i = 0; i < ship.weapons.length; i++) {
                         if (ship.weapons[i] == this) {
                             ship.weapons.splice(i, 1);
-                            scene.remove(this);
+                            scene.remove(this.getMesh());
                             // console.log("Remover", "Cannon I just removed myself from the scene"); 0
                             break;
                         }
@@ -683,7 +717,19 @@
                     let samBB = new THREE.Box3().setFromObject(s.getMesh());
                     let cannonBB = new THREE.Box3().setFromObject(this.getMesh());
                     if (samBB.intersectsBox(cannonBB)) {
-                        console.log("Collide", "COllided !!!!!!");
+                        if (s.state !== s.DESTRUCTING) {
+
+                            let hitRange = (this.start - s.getZ());
+                            let hitScore = 2500 * (1 + hitRange / 50);
+                            score += hitScore;
+
+                            const scoreElement = document.getElementById('score-card');
+                            scoreElement.innerHTML = '+' + hitScore.toFixed(0);
+                            scoreElement.style.display = 'flex';
+                            window.setTimeout(() => {
+                                scoreElement.style.display = 'none';
+                            }, 1000);
+                        }
                         s.explode();
                     }
                 });
@@ -692,12 +738,14 @@
 
             fire() {
                 this.scene.add(this.sphere);
+                this.start = this.getZ();
             }
 
 
         }
 
         class Missile {
+            start = 0;
             target = {
                 x: 0,
                 y: 0,
@@ -794,6 +842,7 @@
                 return this.vehicle;
             }
             fire(target) {
+                this.start = this.getZ();
                 let p1 = { x: this.getX(), z: this.getZ() }
                 let p2 = { x: target.x, z: target.z }
                 if (p2.x >= p1.x) {
@@ -915,8 +964,18 @@
                     // COLLISSION DETECTION
                     let missileBB = new THREE.Box3().setFromObject(this.getMesh());
                     let shipBB = new THREE.Box3().setFromObject(ship.getMesh());
-                    if (missileBB.intersectsBox(shipBB)) {
+                    if (ship.state === ship.STATE_ALIVE && missileBB.intersectsBox(shipBB)) {
                         ship.rock();
+                        let hitRange = (ship.getZ() - this.start);
+                        let hitScore = 8 * (1 + hitRange / 350);
+                        health -= hitScore;
+                        if (health < 0) {
+                            health = 0;
+                            ship.die();
+                        }
+                        let healthElement = document.getElementById('health');
+                        healthElement.style.width = health + '%';
+                        console.log("health1111", healthElement, "Health", health, "Hitscore", hitScore, "Hit range", hitRange);
                     }
 
                 } else if (this.state === this.EXPLODING) {
@@ -927,6 +986,12 @@
         }
 
         class Ship {
+            live = 3;
+            STATE_ALIVE = 0;
+            STATE_DYING = 1;
+            STATE_DEAD = 2;
+            STATE_RESURECTING;
+            state = this.STATE_ALIVE;
             weapons = [];
             LEFT = 37;
             RIGHT = 39;
@@ -1055,7 +1120,7 @@
 
                 this.sprite = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.05, 0.375), new THREE.MeshPhongMaterial({ color: 0x00ff00 }));
                 this.sprite.position.y = 1;
-                this.sprite.castShadow = true;
+                // this.sprite.castShadow = true;
 
                 this.ship.add(this.nose, this.cockpit, this.intake, this.wing, this.fuselage, this.tail, this.engine);
                 this.ship.rotateX(-Math.PI / 2);
@@ -1112,8 +1177,8 @@
                 }
                 if (k == 'Escape') {
                     paused = true;
-                    console.log("clicked", document.getElementById('paused-panel'))
-                    document.getElementById('paused-panel').style.display = 'block';
+                    // console.log("clicked", document.getElementById('paused-panel'))
+                    document.getElementById('paused-panel').style.display = 'flex';
                 }
             }
             handleKeyUp(event) {
@@ -1136,7 +1201,7 @@
 
                 } else if (code == this.LEFT) {
                     //     this.ship.rotation.y += toRad(-5);
-                    console.log("RRR", toDeg(this.ship.rotation.z));
+                    // console.log("RRR", toDeg(this.ship.rotation.z));
                     this.ship.rotation.z += toRad(0.5);
                     if (this.ship.rotation.z > toRad(35)) {
                         this.ship.rotation.z = toRad(35);
@@ -1169,123 +1234,231 @@
             can_fire = true;
             count = 0; // Number of missiles fired
             move(camera, light) {
-
-                if (this.keyPressed['Control'] === true && this.can_fire === true) {
-                    this.handleKeyEvent(this.FIRE_CANNON, scene);
-                    window.setTimeout(() => {
-                        if (this.can_fire === false)
-                            this.can_fire = true;
-                    }, 200);
-                }
-                if (this.keyPressed['ArrowLeft'] === true) {
-                    this.handleKeyEvent(this.LEFT, scene);
-                } else if (this.keyPressed['ArrowRight'] === true) {
-                    this.handleKeyEvent(this.RIGHT, scene);
-                }
-                if (this.keyPressed['ArrowUp'] === true) {
-                    this.handleKeyEvent(this.UP, scene);
-                } else if (this.keyPressed['ArrowDown'] === true) {
-                    this.handleKeyEvent(this.DOWN, scene)
-                }
-
-                this.weapons.forEach((weap) => {
-                    weap.move();
-                });
-
-                let uz = this.velocity.z;
-                let vz = uz - this.acc.z;
-                // console.log("uz = " + uz.toFixed(4) + " vz = " + vz.toFixed(4) + " g = " + this.acc.y.toFixed(4));
-                let cosB = Math.cos(this.ship.rotation.y);
-                /*               let sinB = Math.sin(this.ship.rotation.y);
-              
-                              let dz = Math.cos(this.ship.rotation.y) * -vz * Math.cos(this.ship.rotation.x);
-                              let dx = Math.sin(this.ship.rotation.y) * -vz;
-                              let dy = Math.sin(this.ship.rotation.x) * vz;
-               */
-
-
-                let px = this.getX();
-                let pz = this.getZ();
-                let py = this.getY();
-                // console.log("Pitch: " + toDeg(this.getPitch()).toFixed(2) + "degrees, Yaw: " + toDeg(this.getYaw()).toFixed(2) + "degrees, Roll: " + toDeg(this.getRoll()).toFixed(2));
-
-                let tx = Math.sin(this.getYaw()) * -vz;
-                let tz = -vz;// Math.cos(this.getYaw()) * -vz * Math.cos(this.getPitch());
-                let ty = Math.sin(this.getPitch()) * vz;
-
-                this.velocity.y = Math.max(this.MAX_VELOCITY, ty);
-                this.velocity.x = Math.max(this.MAX_VELOCITY, tx);
-                this.velocity.z = Math.max(this.MAX_VELOCITY, tz);
-
-
-                let sinA = Math.sin(this.getYaw());
-                let cosA = Math.cos(this.getYaw());
-                let SinB = Math.sin(this.getPitch());
-
-                let dx = px * cosA - pz * sinA + (px + tx) - px * cosA + pz * sinA;
-                let dz = px * sinA + pz * cosA + (pz + tz) - pz * cosA - px * sinA;
-                let dy = py + ty;
-
-                if (dy > 12.5) {
-                    dy = 12.5;
-                    console.log("SHo", toDeg(this.ship.rotation.x));
-                } else if (dy < 6.0) {
-                    dy = 6.0; 0
-                }
-                if (dx > (PLAIN_DIMEN.x / 2 - this.dim.x / 2)) {
-                    dx = PLAIN_DIMEN.x / 2 - this.dim.x / 2;
-                } else if (dx < (-PLAIN_DIMEN.x / 2 + this.dim.x / 2)) {
-                    dx = -PLAIN_DIMEN.x / 2 + this.dim.x / 2;
-                }
-
-
-                this.setX(dx);
-                this.setY(dy);
-                this.setZ(dz);
-                //    this.ship.position.copy(v);
-
-                // this.setY(this.getY() + dy);
-                // this.setX(this.getX() * cosB + this.getZ() * -sinB + (px + dx) - px * cosB + pz * sinB);
-                // this.setZ(this.getX() * sinB + this.getZ() * cosB + (pz + dz) - pz * cosB - px * sinB);
-
-
-                if (this.getPitch() !== 0) {
-                    let diff = this.getPitch();
-
-                    this.ship.rotation.x -= (diff * delta) / 2;
-                }
-
-                if (this.ship.rotation.z !== 0) {
-                    let diff = this.ship.rotation.z;
-
-                    this.ship.rotation.z -= (diff * delta) / 2;
-                }
-
-                // let camDiff = (camera.position.z - this.getZ() - this.cameraOffset.z);
-
-                // let translate = camDiff * delta;// + this.velocity.z * cosB + this.velocity.z * sinB;
-
-
-
-
-
-                distanceZ = this.getZ();
-                //     console.log("Collide", this.rocking);
-                if (this.rocking === true) { // Must have been hit or something
-                    camera.position.x += this.rocking_count * ((this.rocking_count % 2 === 0) ? -1 : 1);
-                    this.rocking_count--;
-                    //       console.log("Collide", "Rocking", "jamming", this.rocking_count);
-                    if (this.rocking_count <= 0) {
-                        this.rocking = false;
+                if (this.state === this.STATE_ALIVE) {
+                    if (this.keyPressed['Control'] === true && this.can_fire === true) {
+                        this.handleKeyEvent(this.FIRE_CANNON, scene);
+                        window.setTimeout(() => {
+                            if (this.can_fire === false)
+                                this.can_fire = true;
+                        }, 200);
                     }
+                    if (this.keyPressed['ArrowLeft'] === true) {
+                        this.handleKeyEvent(this.LEFT, scene);
+                    } else if (this.keyPressed['ArrowRight'] === true) {
+                        this.handleKeyEvent(this.RIGHT, scene);
+                    }
+                    if (this.keyPressed['ArrowUp'] === true) {
+                        this.handleKeyEvent(this.UP, scene);
+                    } else if (this.keyPressed['ArrowDown'] === true) {
+                        this.handleKeyEvent(this.DOWN, scene)
+                    }
+
+                    this.weapons.forEach((weap) => {
+                        weap.move();
+                    });
+
+                    let uz = this.velocity.z;
+                    let vz = uz - this.acc.z;
+
+                    let cosB = Math.cos(this.ship.rotation.y);
+
+
+
+                    let px = this.getX();
+                    let pz = this.getZ();
+                    let py = this.getY();
+
+                    let tx = Math.sin(this.getYaw()) * -vz;
+                    let tz = -vz;// Math.cos(this.getYaw()) * -vz * Math.cos(this.getPitch());
+                    let ty = Math.sin(this.getPitch()) * vz;
+
+                    this.velocity.y = Math.max(this.MAX_VELOCITY, ty);
+                    this.velocity.x = Math.max(this.MAX_VELOCITY, tx);
+                    this.velocity.z = Math.max(this.MAX_VELOCITY, tz);
+
+
+                    let sinA = Math.sin(this.getYaw());
+                    let cosA = Math.cos(this.getYaw());
+                    let SinB = Math.sin(this.getPitch());
+
+                    let dx = px * cosA - pz * sinA + (px + tx) - px * cosA + pz * sinA;
+                    let dz = px * sinA + pz * cosA + (pz + tz) - pz * cosA - px * sinA;
+                    let dy = py + ty;
+
+                    if (dy > 12.5) {
+                        dy = 12.5;
+                        // console.log("SHo", toDeg(this.ship.rotation.x));
+                    } else if (dy < 6.0) {
+                        dy = 6.0; 0
+                    }
+                    if (dx > (PLAIN_DIMEN.x / 2 - this.dim.x / 2)) {
+                        dx = PLAIN_DIMEN.x / 2 - this.dim.x / 2;
+                    } else if (dx < (-PLAIN_DIMEN.x / 2 + this.dim.x / 2)) {
+                        dx = -PLAIN_DIMEN.x / 2 + this.dim.x / 2;
+                    }
+
+
+                    this.setX(dx);
+                    this.setY(dy);
+                    this.setZ(dz);
+
+
+
+                    if (this.getPitch() !== 0) {
+                        let diff = this.getPitch();
+
+                        this.ship.rotation.x -= (diff * delta) / 2;
+                    }
+
+                    if (this.ship.rotation.z !== 0) {
+                        let diff = this.ship.rotation.z;
+
+                        this.ship.rotation.z -= (diff * delta) / 2;
+                    }
+
+
+
+                    score += Math.abs(distanceZ - this.getZ()) * 2;
+                    distanceZ = this.getZ();
+                    document.getElementById('score').innerHTML = score.toFixed(0);
+                    //     console.log("Collide", this.rocking);
+                    if (this.rocking === true) { // Must have been hit or something
+                        camera.position.x += this.rocking_count * ((this.rocking_count % 2 === 0) ? -1 : 1);
+                        this.rocking_count--;
+                        //       console.log("Collide", "Rocking", "jamming", this.rocking_count);
+                        if (this.rocking_count <= 0) {
+                            this.rocking = false;
+                        }
+                    }
+                    if (distanceZ < -3300) {
+                        // game Over
+                        paused = true;
+                        document.getElementById('game-over-panel').style.display = 'flex';
+                        document.getElementById('score-title-text').innerHTML = "Score: " + score.toFixed(0);
+                        document.getElementById('title-text').innerHTML = 'Congratulation';
+                    }
+                } else if (this.state === this.STATE_DYING) {
+                    this.dying();
+                } else if (this.state === this.STATE_RESURECTING) {
+                    this.resurrecting();
                 }
+                else if (this.state === this.STATE_DEAD) {
+                    this.state = this.STATE_DEAD;
+                }
+
+            }
+
+            die() {
+                this.state = this.STATE_DYING;
+            }
+
+            dying() {
+                this.setZ(this.getZ() - this.MAX_VELOCITY)
+                this.setY(this.getY() - 0.05);
+                this.ship.rotation.x -= 0.03;
+                this.ship.rotation.y += 0.03;
+                this.ship.rotation.z -= 0.03;
+                if (this.getY() <= 0) {
+                    this.died();
+                }
+            }
+            timeOut() {
+                // console.log("Timeout", 'called')
+                let countElement = document.getElementById('count-down');
+                let count = Number(countElement.innerHTML);
+                count--;
+                if (count >= 0) {
+                    // console.log("timeout", count);
+                    countElement.innerHTML = count;
+                    // console.log("timeout", countElement);
+                    window.setTimeout(() => {
+                        this.timeOut();
+                    }, 1000);
+                } else {
+                    let countContElement = document.getElementById('count-container');
+                    countContElement.style.display = 'none';
+                    countElement.innerHTML = 5;
+                    health = 100;
+                    let healthElement = document.getElementById('health');
+                    healthElement.style.width = health + '%';
+                }
+            }
+            died() {
+                this.state = this.STATE_DEAD;
+                paused = true;
+                this.live--;
+                // live = 2
+                //  <img id="img_live1" src="./images/live_.svg">
+
+
+                // console.log("Died", "Just died live:", this.live);
+                if (this.live < 0) {
+                    document.getElementById('game-over-panel').style.display = 'flex';
+                    document.getElementById('score-title-text').innerHTML = "Score: " + score.toFixed(0);
+                } else {
+                    document.getElementById('img_live' + (this.live + 1)).src = "./images/live_1.svg";
+                    // console.log("I am ordered to Resurrect")
+                    let countContElement = document.getElementById('count-container');
+                    countContElement.style.display = 'flex';
+                    window.setTimeout(() => {
+                        this.timeOut();
+                    }, 1000);
+
+                    window.setTimeout(() => {
+                        this.resurrect();
+                    }, 1000);
+
+                }
+
+            }
+
+            resurrecting() {
+                // console.log("Resurrecting", this.getY());
+                /* let dx = 0 - this.getX();
+                let dy = 10 - this.getY();
+                let dAx = Math.PI / 2; - this.ship.rotation.x;
+                let dAy = 0 - this.ship.rotation.y;
+                let dAz = 0 - this.ship.rotation.z;
+ */
+                let FRAMES = 120;
+
+                this.setX(this.getX() + (this.resurrect_values.dx / FRAMES));
+                this.setY(this.getY() + (this.resurrect_values.dy / FRAMES));
+                this.ship.rotation.x = (this.ship.rotation.x + (this.resurrect_values.dAx / FRAMES));
+                this.ship.rotation.y = (this.ship.rotation.y + (this.resurrect_values.dAy / FRAMES));
+                this.ship.rotation.z = (this.ship.rotation.z + (this.resurrect_values.dAz / FRAMES));
+                if (this.getY() >= 9.9) {
+                    this.state = this.STATE_ALIVE;
+                    // this.ship.rotation.set()
+                }
+            }
+            resurrect_values = {};
+            resurrect() {
+                this.resurrect_values = {
+                    dx: 0 - this.getX(),
+                    dy: 10 - this.getY(),
+                    dAx: -Math.PI / 2 - this.ship.rotation.x,
+                    dAy: 0 - this.ship.rotation.y,
+                    dAz: 0 - this.ship.rotation.z
+                }
+                this.state = this.STATE_RESURECTING;
+                SAMS.forEach((s) => {
+                    scene.remove(s.getMesh());
+                    s.missiles.forEach((m) => {
+                        scene.remove(m.getMesh());
+                    })
+                })
+                SAMS = [];
+                paused = false;
+                this.rocking_count = 0;
+                this.rocking = false;
 
             }
 
             rock() {
                 this.rocking = true;
                 this.rocking_count = 10;
-                console.log("Collide", " MAYDAY!!!!!! COllided !!!!!!", this.rocking, "and", this.rocking_count);
+                // console.log("Collide", " MAYDAY!!!!!! COllided !!!!!!", this.rocking, "and", this.rocking_count);
             }
 
             rocking_count = 0;
@@ -1297,10 +1470,14 @@
             }
         }
         var delta = 0;
-
+        THREE.ImageUtils.crossOrigin = "";
 
         function initTHREEJS() {
+
             let scene = new THREE.Scene();
+
+
+
 
             let camera = new THREE.PerspectiveCamera(
                 75, // field of view
@@ -1319,19 +1496,20 @@
             );
             light.shadow.mapSize.width = 2024;
             light.shadow.mapSize.height = 2024;
-            light.castShadow = true;
+            // light.castShadow = true;
             light.position.set(0, 5, 5);
             //    light.lookAt(0, 0, 0);
-
+            const canvas = document.getElementById('img-back');
+            // console.log("render", canvas);
             let renderer = new THREE.WebGLRenderer(
-                { antialias: true }
+                { canvas, alpha: true, antialias: true }
             );
-            renderer.setClearColor('#202020');
+            //          renderer.setClearColor('#202020');
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.shadowMap.enabled = true;
             //       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-            document.body.appendChild(renderer.domElement);
+            //           document.body.appendChild(renderer.domElement);
             window.addEventListener('resize', () => {
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 camera.aspect = window.innerWidth / window.innerHeight;
@@ -1380,7 +1558,7 @@
         const PLAIN_DIMEN = {
             x: 30,
             y: 15,
-            z: 2500,
+            z: 3500,
         };
 
         var distanceZ = 0;
@@ -1394,12 +1572,13 @@
 
 
         const plane = new THREE.Mesh(
-            new THREE.PlaneGeometry(PLAIN_DIMEN.x, PLAIN_DIMEN.z),
-            new THREE.MeshPhongMaterial({ color: 0x1F1FFF0, side: THREE.DoubleSide })
+            new THREE.PlaneGeometry(PLAIN_DIMEN.x, 300),
+            new THREE.MeshPhongMaterial({ color: 0x1F1FFF, side: THREE.DoubleSide })
         );
-        plane.position.z -= PLAIN_DIMEN.z / 2;
-        plane.castShadow = false;
-        plane.receiveShadow = true;
+        plane.position.z -= 3350;
+        plane.position.y += 0.3;
+        // plane.castShadow = false;
+        // plane.receiveShadow = true;
         plane.rotation.x = Math.PI / 2;
 
         function createScene() {
@@ -1434,9 +1613,10 @@
                 bevelSize: 0
             };
             let mesh3 = new THREE.Mesh(new THREE.ExtrudeGeometry(shape2, extrudeSettings2),
-                new THREE.MeshPhongMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 }));
+                new THREE.MeshPhongMaterial({ color: 0xFFFFFF, transparent: false, opacity: 1 }));
             mesh3.position.y -= m;
             mesh3.position.z -= PLAIN_DIMEN.z;
+            mesh3.receiveShadow = true;
             return mesh3;
         }
 
@@ -1457,10 +1637,10 @@
         //       const sams = [];
         var lastDistanceZ = 160;
         function addSAMtoScene() {
-            if ((lastDistanceZ - ship.getZ()) > 100) {
+            if (paused === false && (lastDistanceZ - ship.getZ()) > 100 && ((ship.getZ() - 400) > -3500)) {
                 let shiftz = [0, 20, 40, 55]
                 for (let i = 0; i < shiftz.length; i++) {
-                    console.log("Interval fired " + (25 * ship.velocity.z) + " shiP : " + ship.getZ());
+                    // console.log("Interval fired " + (25 * ship.velocity.z) + " shiP : " + ship.getZ());
                     const sss = new SAMLauncher(0, 0);
                     let x = -PLAIN_DIMEN.x / 2 + sss.dim.x / 2 + Math.random() * (PLAIN_DIMEN.x - sss.dim.x);
                     sss.setX(x);
@@ -1471,7 +1651,7 @@
                     lastDistanceZ = distanceZ;
                 }
             } else {
-                console.log("Interval Rejected: " + (lastDistanceZ - ship.getZ()));
+                // console.log("Interval Rejected: " + (lastDistanceZ - ship.getZ()));
 
             }
         }
@@ -1483,11 +1663,13 @@
         ship.setY(10.5);
         ship.setZ(10);
         ship.setX(0);
-       
+
+        // console.log("Resurrection", toDeg(ship.getMesh().rotation.x), toDeg(ship.getMesh().rotation.y), toDeg(ship.getMesh().rotation.z))
+
         camera.position.z = ship.getZ() + 2.5;//-= (camera.position.z - this.getZ() - this.cameraOffset.z) * delta + this.velocity.z * cosB;
         camera.position.y = ship.getY() + 1.5;// -= (camera.position.y - this.getY() - this.cameraOffset.y) * delta;
         camera.position.x = ship.getX() - 0;// -= (camera.position.x - this.getX() - this.cameraOffset.x) * delta;
-         camera.lookAt(ship.getX(), ship.getY(), ship.getZ());
+        camera.lookAt(ship.getX(), ship.getY(), ship.getZ());
         light.position.z = camera.position.z + 2;
 
         // camera.position.z = ship.getZ() + 3;
@@ -1516,15 +1698,8 @@
         //   scene.add(ss);
 
 
-        let aLight = new THREE.AmbientLight(0xFFFFFF);
-        aLight.position.set(0, PLAIN_DIMEN.y * 3, 0);
-        var ambientTarget = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.01, 0.01),
-            new THREE.MeshBasicMaterial());
-        ambientTarget.position.set(0, 0, 0);
-        aLight.target = ambientTarget;
-        //    scene.add(aLight.target);
-        //  scene.add(aLight);
 
+        LIGHTS = [];
         let numberOfLights = PLAIN_DIMEN.z / 100;
         for (let i = 0; i < (numberOfLights); i++) {
             var spotLight = new THREE.SpotLight((i % 2 === 0) ? 0xFFFFFF : 0xFFFFFF);
@@ -1533,6 +1708,7 @@
                 new THREE.MeshBasicMaterial());
             spotTarget.position.set(0, 0, -(PLAIN_DIMEN.z / numberOfLights) * i);
             spotLight.target = spotTarget;
+            LIGHTS.push(spotLight);
             scene.add(spotLight.target);
             scene.add(spotLight);
         }
@@ -1554,7 +1730,8 @@
 
         const duration = Number.MAX_VALUE - Number.MAX_VALUE + 1.2; // 2 seconds maneurverA
         var paused = true;
-
+        var score = 0;
+        var health = 100;
 
         var repeatMe = function () {
             number++;
@@ -1578,6 +1755,17 @@
                 SAMS.forEach((s) => {
                     s.move();
                 });
+                LIGHTS.forEach((sl, i) => {
+                    if (Math.abs(ship.getZ() - sl.position.z) < 10) {
+                        console.log("EYi", i)
+                     //   sl.castShadow = true;
+                 //       sl.shadow.mapSize.width = 2048;
+                   //     sl.shadow.mapSize.height = 2048;
+                        return;
+                    } else {
+                        spotLight.castShadow = false;
+                    }
+                })
             }
             renderer.render(scene, camera);
 
